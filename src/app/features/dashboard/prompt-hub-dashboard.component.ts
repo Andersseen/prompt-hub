@@ -2,6 +2,7 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@a
 import { Router, RouterOutlet } from '@angular/router';
 import { MOVEMENT_DIRECTIVES } from 'angular-movement';
 
+import { ThemeService } from '../../core/services/theme.service';
 import { WorkspaceStore } from '../../core/services/workspace-store.service';
 import { DashboardHeaderComponent } from './dashboard-header.component';
 import { DashboardNavItem } from './dashboard-nav.types';
@@ -66,6 +67,7 @@ import { DashboardSidebarComponent } from './dashboard-sidebar.component';
 export class PromptHubDashboardComponent implements OnInit {
   readonly store = inject(WorkspaceStore);
   private readonly router = inject(Router);
+  private readonly theme = inject(ThemeService);
 
   readonly navItems: DashboardNavItem[] = [
     { id: 'agents', label: 'Agents', route: 'agents' },
