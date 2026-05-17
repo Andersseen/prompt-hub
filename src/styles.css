@@ -1,4 +1,5 @@
 @import 'tailwindcss';
+@import '@voltui/components/themes/presets/glacier-sharp.css';
 
 :root {
   font-family:
@@ -6,8 +7,8 @@
     sans-serif;
   font-size: 16px;
   font-weight: 400;
-  color: #e2e8f0;
-  background: #020617;
+  color: var(--foreground);
+  background: var(--background);
   font-synthesis: none;
   text-rendering: optimizeLegibility;
   -webkit-font-smoothing: antialiased;

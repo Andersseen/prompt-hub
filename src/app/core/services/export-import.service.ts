@@ -93,7 +93,7 @@ export class ExportImportService {
     }
 
     const data = value as Partial<WorkspaceExport>;
-    const arrayKeys: Array<keyof WorkspaceExport> = [
+    const arrayKeys: (keyof WorkspaceExport)[] = [
       'roles',
       'promptFrameworks',
       'promptTemplates',
@@ -115,7 +115,7 @@ export class ExportImportService {
         throw new Error(`${key} must be an array.`);
       }
 
-      for (const entity of data[key] as Array<{ id?: string; name?: string }>) {
+      for (const entity of data[key] as { id?: string; name?: string }[]) {
         if (!entity.id) {
           throw new Error(`${key} contains an entity without id.`);
         }

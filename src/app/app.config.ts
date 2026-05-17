@@ -10,6 +10,7 @@ import {
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
 import { provideFileRouter, requestContextInterceptor } from '@analogjs/router';
 import { provideMovement } from 'angular-movement';
+import { provideVoltTheme } from '@voltui/components';
 
 export const appConfig: ApplicationConfig = {
   providers: [
@@ -25,6 +26,11 @@ export const appConfig: ApplicationConfig = {
       easing: 'cubic-bezier(0.16, 1, 0.3, 1)',
       delay: 0,
       disabled: false,
+    }),
+    provideVoltTheme({
+      color: 'glacier',
+      style: 'sharp',
+      dark: true,
     }),
   ],
 };

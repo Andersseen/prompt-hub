@@ -5,7 +5,7 @@ import analog from '@analogjs/platform';
 import tailwindcss from '@tailwindcss/vite';
 
 // https://vitejs.dev/config/
-export default defineConfig(({ mode }) => ({
+export default defineConfig(() => ({
   build: {
     target: ['es2020'],
   },
@@ -22,4 +22,11 @@ export default defineConfig(({ mode }) => ({
     }),
     tailwindcss()
   ],
+  test: {
+    globals: true,
+    setupFiles: ['src/test-setup.ts'],
+    environment: 'jsdom',
+    include: ['src/**/*.{test,spec}.ts'],
+    reporters: ['default'],
+  },
 }));

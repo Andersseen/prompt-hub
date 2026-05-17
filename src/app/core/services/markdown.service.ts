@@ -65,7 +65,7 @@ export class MarkdownService {
     agent: Agent,
     role: Role | undefined,
     skills: Skill[],
-    templates: Array<{ template: PromptTemplate; framework?: PromptFramework }>
+    templates: { template: PromptTemplate; framework?: PromptFramework }[]
   ): string {
     return [
       `# Agent: ${agent.name}`,
