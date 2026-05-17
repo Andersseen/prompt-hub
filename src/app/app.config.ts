@@ -1,24 +1,23 @@
 import {
   provideHttpClient,
   withFetch,
-  withInterceptors,
 } from '@angular/common/http';
 import {
   ApplicationConfig,
   provideBrowserGlobalErrorListeners,
 } from '@angular/core';
 import { provideClientHydration, withEventReplay } from '@angular/platform-browser';
-import { provideFileRouter, requestContextInterceptor } from '@analogjs/router';
+import { provideRouter } from '@angular/router';
 import { provideMovement } from 'angular-movement';
 import { provideVoltTheme } from '@voltui/components';
+import { appRoutes } from './app.routes';
 
 export const appConfig: ApplicationConfig = {
   providers: [
     provideBrowserGlobalErrorListeners(),
-    provideFileRouter(),
+    provideRouter(appRoutes),
     provideHttpClient(
-      withFetch(),
-      withInterceptors([requestContextInterceptor])
+      withFetch()
     ),
     provideClientHydration(withEventReplay()),
     provideMovement({

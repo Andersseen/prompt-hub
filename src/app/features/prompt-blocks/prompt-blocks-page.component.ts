@@ -42,7 +42,8 @@ import { TagInputComponent } from '../../shared/components/tag-input.component';
             <div 
               class="group cursor-pointer rounded-lg border border-border bg-surface p-4 transition-all hover:border-primary/30 hover:bg-elevated hover:shadow-md"
               tabindex="0"
-              [move]="'fade-up'"
+              [move]="{ opacity: [0, 1], y: [12, 0], scale: [0.98, 1] }"
+              [moveWhileHover]="{ scale: [1, 1.01], y: [0, -1] }"
               (click)="editBlock(block)"
               (keydown.enter)="editBlock(block)"
             >

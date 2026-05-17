@@ -1,52 +1,30 @@
-import { CommonModule } from '@angular/common';
-import { ChangeDetectionStrategy, Component, OnInit, inject } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@angular/core';
+import { Router, RouterOutlet } from '@angular/router';
 import { MOVEMENT_DIRECTIVES } from 'angular-movement';
 
 import { WorkspaceStore } from '../../core/services/workspace-store.service';
-import { AgentsPageComponent } from '../agents/agents-page.component';
-import { FrameworksPageComponent } from '../frameworks/frameworks-page.component';
-import { ImportExportPageComponent } from '../import-export/import-export-page.component';
-import { PromptBlocksPageComponent } from '../prompt-blocks/prompt-blocks-page.component';
-import { RolesPageComponent } from '../roles/roles-page.component';
-import { SettingsPageComponent } from '../settings/settings-page.component';
-import { SkillsPageComponent } from '../skills/skills-page.component';
-import { TemplatesPageComponent } from '../templates/templates-page.component';
 import { DashboardHeaderComponent } from './dashboard-header.component';
-import { DashboardNavItem, DashboardSectionId } from './dashboard-nav.types';
+import { DashboardNavItem } from './dashboard-nav.types';
 import { DashboardSidebarComponent } from './dashboard-sidebar.component';
-
-type SectionId = DashboardSectionId;
 
 @Component({
   selector: 'app-prompt-hub-dashboard',
   imports: [
-    AgentsPageComponent,
-    CommonModule,
     DashboardHeaderComponent,
     DashboardSidebarComponent,
-    FrameworksPageComponent,
-    ImportExportPageComponent,
-    PromptBlocksPageComponent,
-    RolesPageComponent,
-    SettingsPageComponent,
-    SkillsPageComponent,
-    TemplatesPageComponent,
+    RouterOutlet,
     ...MOVEMENT_DIRECTIVES,
   ],
   template: `
     <main class="min-h-screen bg-background text-foreground">
       <div class="grid min-h-screen lg:grid-cols-[260px_1fr]">
-        <app-dashboard-sidebar
-          [items]="navItems"
-          [activeId]="store.activeSection()"
-          (sectionSelected)="selectSection($event)"
-        />
+        <app-dashboard-sidebar [items]="navItems" />
 
         <section class="min-w-0 p-4 md:p-6">
           <app-dashboard-header
             [workspaceName]="store.workspace()?.name || ''"
-            [title]="store.activeTitle()"
-            [showFilters]="!isUtilitySection()"
+            [title]="activeTitle()"
+            [showFilters]="!isUtilityRoute()"
             [search]="store.search()"
             [tagFilter]="store.tagFilter()"
             (searchChange)="store.search.set($event)"
@@ -54,43 +32,27 @@ type SectionId = DashboardSectionId;
           />
 
           @if (store.loading()) {
-            <div class="rounded-md border border-border bg-surface p-4 text-surface-foreground">Loading local workspace...</div>
+            <div class="flex items-center justify-center rounded-lg border border-border bg-surface py-12 text-muted-foreground">
+              <svg class="mr-2 h-5 w-5 animate-spin" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                <circle class="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" stroke-width="4"></circle>
+                <path class="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+              </svg>
+              Loading workspace...
+            </div>
           } @else {
-            <section [move]="'fade-up'">
-              @switch (store.activeSection()) {
-                @case ('agents') {
-                  <app-agents-page />
-                }
-                @case ('promptFrameworks') {
-                  <app-frameworks-page />
-                }
-                @case ('promptTemplates') {
-                  <app-templates-page />
-                }
-                @case ('skills') {
-                  <app-skills-page />
-                }
-                @case ('roles') {
-                  <app-roles-page />
-                }
-                @case ('promptBlocks') {
-                  <app-prompt-blocks-page />
-                }
-                @case ('importExport') {
-                  <app-import-export-page />
-                }
-                @case ('settings') {
-                  <app-settings-page />
-                }
-              }
-            </section>
+            <div [moveAnimation]="{ initial: { opacity: 0, y: 8 }, animate: { opacity: 1, y: 0 }, duration: 280 }">
+              <router-outlet />
+            </div>
           }
         </section>
       </div>
 
-      @if (store.toast()) {
-        <div class="fixed bottom-4 right-4 rounded-md border border-cyan-500/40 bg-slate-900 px-4 py-3 text-sm text-cyan-100 shadow-xl" [move]="'fade-up'">
-          {{ store.toast() }}
+      @if (store.toast(); as toastText) {
+        <div 
+          class="fixed bottom-4 right-4 rounded-lg border border-primary/30 bg-surface px-4 py-3 text-sm text-foreground shadow-lg"
+          [moveAnimation]="{ initial: { opacity: 0, y: 16, scale: 0.96 }, animate: { opacity: 1, y: 0, scale: 1 }, duration: 240 }"
+        >
+          {{ toastText }}
         </div>
       }
     </main>
@@ -99,27 +61,41 @@ type SectionId = DashboardSectionId;
 })
 export class PromptHubDashboardComponent implements OnInit {
   readonly store = inject(WorkspaceStore);
+  private readonly router = inject(Router);
 
   readonly navItems: DashboardNavItem[] = [
-    { id: 'agents', label: 'Agents' },
-    { id: 'promptFrameworks', label: 'Prompt Frameworks' },
-    { id: 'promptTemplates', label: 'Prompt Templates' },
-    { id: 'skills', label: 'Skills' },
-    { id: 'roles', label: 'Roles' },
-    { id: 'promptBlocks', label: 'Prompt Blocks' },
-    { id: 'importExport', label: 'Export / Import' },
-    { id: 'settings', label: 'Settings' },
+    { id: 'agents', label: 'Agents', route: 'agents' },
+    { id: 'promptFrameworks', label: 'Prompt Frameworks', route: 'frameworks' },
+    { id: 'promptTemplates', label: 'Prompt Templates', route: 'templates' },
+    { id: 'skills', label: 'Skills', route: 'skills' },
+    { id: 'roles', label: 'Roles', route: 'roles' },
+    { id: 'promptBlocks', label: 'Prompt Blocks', route: 'blocks' },
+    { id: 'importExport', label: 'Export / Import', route: 'import-export' },
+    { id: 'settings', label: 'Settings', route: 'settings' },
   ];
+
+  readonly activeTitle = computed(() => {
+    const url = this.router.url;
+    const route = url.split('/').pop() || '';
+    const titles: Record<string, string> = {
+      'agents': 'Agents',
+      'frameworks': 'Prompt Frameworks',
+      'templates': 'Prompt Templates',
+      'skills': 'Skills',
+      'roles': 'Roles',
+      'blocks': 'Prompt Blocks',
+      'import-export': 'Export / Import',
+      'settings': 'Settings',
+    };
+    return titles[route] ?? 'Prompt Hub';
+  });
 
   async ngOnInit(): Promise<void> {
     await this.store.init();
   }
 
-  selectSection(id: SectionId): void {
-    this.store.activeSection.set(id);
-  }
-
-  isUtilitySection(): boolean {
-    return ['importExport', 'settings'].includes(this.store.activeSection());
+  isUtilityRoute(): boolean {
+    const url = this.router.url;
+    return url.includes('import-export') || url.includes('settings');
   }
 }

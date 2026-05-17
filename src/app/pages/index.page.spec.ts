@@ -9,6 +9,6 @@ describe('Home page', () => {
 
     expect(await screen.findByText('Workspace')).toBeInTheDocument();
     expect(screen.getByText('Local-first prompt management')).toBeInTheDocument();
-    expect(screen.getByRole('button', { name: 'Agents' })).toBeInTheDocument();
+    expect(screen.getByRole('link', { name: 'Agents' })).toBeInTheDocument();
   });
 });

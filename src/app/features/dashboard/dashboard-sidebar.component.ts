@@ -1,10 +1,11 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { RouterLink, RouterLinkActive } from '@angular/router';
 
 import { DashboardNavItem, DashboardSectionId } from './dashboard-nav.types';
 
 @Component({
   selector: 'app-dashboard-sidebar',
-  imports: [],
+  imports: [RouterLink, RouterLinkActive],
   template: `
     <aside class="flex h-full flex-col border-b border-border bg-surface p-5 lg:border-b-0 lg:border-r">
       <!-- Brand -->
@@ -19,22 +20,23 @@ import { DashboardNavItem, DashboardSectionId } from './dashboard-nav.types';
       <!-- Navigation -->
       <nav class="flex-1 space-y-0.5" aria-label="Primary navigation">
         @for (item of items(); track item.id) {
-          <button
-            type="button"
+          <a
+            [routerLink]="item.route"
+            routerLinkActive
+            #rla="routerLinkActive"
             class="group flex w-full items-center gap-2.5 rounded-md px-3 py-2 text-sm font-medium transition-colors"
-            [class.bg-primary]="activeId() === item.id"
-            [class.text-primary-foreground]="activeId() === item.id"
-            [class.text-foreground]="activeId() !== item.id"
-            [class.hover:bg-muted]="activeId() !== item.id"
-            (click)="sectionSelected.emit(item.id)"
+            [class.bg-primary]="rla.isActive"
+            [class.text-primary-foreground]="rla.isActive"
+            [class.text-foreground]="!rla.isActive"
+            [class.hover:bg-muted]="!rla.isActive"
           >
             <span class="flex-1 text-left">{{ item.label }}</span>
-            @if (activeId() === item.id) {
+            @if (rla.isActive) {
               <svg class="h-4 w-4 opacity-60" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
                 <path stroke-linecap="round" stroke-linejoin="round" d="M9 5l7 7-7 7" />
               </svg>
             }
-          </button>
+          </a>
         }
       </nav>
 
