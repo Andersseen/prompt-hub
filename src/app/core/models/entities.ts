@@ -9,7 +9,7 @@ export type EntityType =
 
 export type ExportFormat = 'json' | 'yaml' | 'markdown';
 
-export type Theme = 'system' | 'light' | 'dark';
+export type Theme = 'light' | 'dark';
 
 export interface TimestampedEntity {
   id: string;

@@ -45,7 +45,9 @@
     "lint": "eslint .",
     "e2e": "playwright test",
     "check": "pnpm run typecheck && pnpm run lint && pnpm run test && pnpm run build",
-    "preview": "node dist/analog/server/index.mjs"
+    "preview": "node dist/analog/server/index.mjs",
+    "deploy": "pnpm run build && wrangler pages deploy dist/client --project-name=prompt-hub",
+    "deploy:preview": "pnpm run build && wrangler pages deploy dist/client --project-name=prompt-hub --branch=preview"
   },
   "dependencies": {
     "@analogjs/content": "^2.5.1",
@@ -69,6 +71,7 @@
     "marked-mangle": "^1.1.10",
     "postcss": "^8.5.3",
     "prismjs": "^1.29.0",
+    "quartz-headless": "^0.0.3",
     "rxjs": "~7.8.0",
     "tslib": "^2.3.0",
     "yaml": "^2.9.0"
@@ -95,7 +98,8 @@
     "typescript-eslint": "^8.59.3",
     "vite": "^8.0.0",
     "vite-tsconfig-paths": "^4.2.0",
-    "vitest": "^4.1.0"
+    "vitest": "^4.1.0",
+    "wrangler": "^4.92.0"
   },
   "overrides": {
     "vite": "$vite",

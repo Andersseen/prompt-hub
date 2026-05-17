@@ -142,7 +142,7 @@ export class SeedService {
     );
 
     const settings = withTimestamps<Omit<AppSettings, 'id' | 'createdAt' | 'updatedAt'>>({
-      theme: 'system',
+      theme: 'dark',
       defaultExportFormat: 'markdown',
       defaultWorkspaceName: 'Prompt Hub',
       autosave: true,

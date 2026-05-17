@@ -5,4 +5,5 @@ export type DashboardSectionId = EntityType | 'importExport';
 export interface DashboardNavItem {
   id: DashboardSectionId;
   label: string;
+  route: string;
 }
