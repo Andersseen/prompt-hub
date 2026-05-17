@@ -5,11 +5,13 @@ import { VoltBadge, VoltButton, VoltCard, VoltFormField, VoltInput, VoltLabel, V
 import { EntityType, PromptBlock, PromptBlockCategory } from '../../core/models/entities';
 import { ClipboardService } from '../../core/services/clipboard.service';
 import { WorkspaceStore } from '../../core/services/workspace-store.service';
-import { formatTags, parseTags, withTimestamps } from '../../core/utils/entity-utils';
+import { withTimestamps } from '../../core/utils/entity-utils';
+import { TagInputComponent } from '../../shared/components/tag-input.component';
 
 @Component({
   selector: 'app-prompt-blocks-page',
   imports: [
+    TagInputComponent,
     VoltBadge,
     VoltButton,
     VoltCard,
@@ -69,10 +71,7 @@ import { formatTags, parseTags, withTimestamps } from '../../core/utils/entity-u
                 }
               </select>
             </volt-form-field>
-            <volt-form-field>
-              <volt-label>Tags</volt-label>
-              <volt-input name="blockTags" [value]="formatTags(block.tags)" (valueChange)="block.tags = parseTags($event)" />
-            </volt-form-field>
+            <app-tag-input name="blockTags" [tags]="block.tags" (tagsChange)="block.tags = $event" />
             <volt-button variant="solid" type="submit">Save Block</volt-button>
           </form>
         }
@@ -139,18 +138,6 @@ export class PromptBlocksPageComponent implements OnInit {
   async copyText(value: string): Promise<void> {
     await this.clipboard.copy(value);
     this.store.notify('Copied to clipboard.');
-  }
-
-  formatTags(tags: string[]): string {
-    return formatTags(tags);
-  }
-
-  parseTags(value: string): string[] {
-    return parseTags(value);
-  }
-
-  readInputValue(event: Event): string {
-    return event.target instanceof HTMLInputElement ? event.target.value : '';
   }
 
   readCategoryValue(event: Event): PromptBlockCategory {
