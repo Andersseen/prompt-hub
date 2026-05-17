@@ -71,6 +71,9 @@ importers:
       prismjs:
         specifier: ^1.29.0
         version: 1.30.0
+      quartz-headless:
+        specifier: ^0.0.3
+        version: 0.0.3(@angular/common@21.2.13(@angular/core@21.2.13(@angular/compiler@21.2.13)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.13(@angular/compiler@21.2.13)(rxjs@7.8.2))
       rxjs:
         specifier: ~7.8.0
         version: 7.8.2
@@ -4354,6 +4357,13 @@ packages:
 
   quansync@0.2.11:
     resolution: {integrity: sha512-AifT7QEbW9Nri4tAwR5M/uzpBuqfZf+zwaEM/QkzEjj7NBuFD2rBuy0K3dE+8wltbezDV7JMA0WfnCPYRSYbXA==}
+
+  quartz-headless@0.0.3:
+    resolution: {integrity: sha512-iasU20GS49wpoCWMB1SJpqS+8uVibiTpqhHxYrnnuDKkXSERET/Bm+QbjVc80XIdQXgjPVmOgmwkEn0LMdmJcw==}
+    engines: {node: '>=20'}
+    peerDependencies:
+      '@angular/common': ^21.0.0
+      '@angular/core': ^21.0.0
 
   querystringify@2.2.0:
     resolution: {integrity: sha512-FIqgj2EUvTa7R50u0rGsyTftzjYmv/a3hO345bZNrqabNqjtgiDMgmo4mkUjd+nzU5oF3dClKqFIPUKybUyqoQ==}
@@ -9436,6 +9446,12 @@ snapshots:
       side-channel: 1.1.0
 
   quansync@0.2.11: {}
+
+  quartz-headless@0.0.3(@angular/common@21.2.13(@angular/core@21.2.13(@angular/compiler@21.2.13)(rxjs@7.8.2))(rxjs@7.8.2))(@angular/core@21.2.13(@angular/compiler@21.2.13)(rxjs@7.8.2)):
+    dependencies:
+      '@angular/common': 21.2.13(@angular/core@21.2.13(@angular/compiler@21.2.13)(rxjs@7.8.2))(rxjs@7.8.2)
+      '@angular/core': 21.2.13(@angular/compiler@21.2.13)(rxjs@7.8.2)
+      tslib: 2.8.1
 
   querystringify@2.2.0: {}
 

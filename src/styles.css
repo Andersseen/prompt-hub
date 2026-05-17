@@ -293,6 +293,63 @@ select.form-control[multiple] option:checked {
   color: var(--primary-foreground);
 }
 
+/* Quartz Splitter styles */
+.qz-splitter-container {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.qz-splitter-handle {
+  position: relative;
+  flex-shrink: 0;
+  background: transparent;
+  transition: background-color 150ms ease;
+  z-index: 10;
+}
+
+.qz-splitter-handle::before {
+  content: '';
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  background: var(--border);
+  border-radius: var(--radius-full);
+  transition: background-color 150ms ease, width 150ms ease, height 150ms ease;
+}
+
+.qz-splitter-handle--horizontal::before {
+  width: 3px;
+  height: 32px;
+}
+
+.qz-splitter-handle--vertical::before {
+  width: 32px;
+  height: 3px;
+}
+
+.qz-splitter-handle:hover::before,
+.qz-splitter-handle--dragging::before {
+  background: var(--primary);
+}
+
+.qz-splitter-handle--horizontal:hover::before,
+.qz-splitter-handle--horizontal.qz-splitter-handle--dragging::before {
+  width: 4px;
+}
+
+.qz-splitter-handle--vertical:hover::before,
+.qz-splitter-handle--vertical.qz-splitter-handle--dragging::before {
+  height: 4px;
+}
+
+.qz-splitter-handle:focus-visible {
+  outline: 2px solid var(--ring);
+  outline-offset: 2px;
+}
+
 /* Scrollbar styling */
 ::-webkit-scrollbar {
   width: 8px;

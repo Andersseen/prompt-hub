@@ -7,7 +7,7 @@ import { DashboardNavItem, DashboardSectionId } from './dashboard-nav.types';
   selector: 'app-dashboard-sidebar',
   imports: [RouterLink, RouterLinkActive],
   template: `
-    <aside class="flex h-full flex-col border-b border-border bg-surface p-5 lg:border-b-0 lg:border-r">
+    <aside class="flex min-h-full flex-col bg-surface p-5">
       <!-- Brand -->
       <div class="mb-8">
         <p class="text-[10px] font-semibold uppercase tracking-widest text-primary">Prompt Hub</p>

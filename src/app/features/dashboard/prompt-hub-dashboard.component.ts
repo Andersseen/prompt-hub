@@ -17,9 +17,13 @@ import { DashboardSidebarComponent } from './dashboard-sidebar.component';
   ],
   template: `
     <main class="min-h-screen bg-background text-foreground">
-      <div class="grid min-h-screen lg:grid-cols-[260px_1fr]">
+      <!-- Fixed Sidebar -->
+      <div class="fixed left-0 top-0 z-40 h-screen w-[260px] overflow-y-auto border-r border-border bg-surface">
         <app-dashboard-sidebar [items]="navItems" />
+      </div>
 
+      <!-- Main Content -->
+      <div class="ml-[260px] min-h-screen">
         <section class="min-w-0 p-4 md:p-6">
           <app-dashboard-header
             [workspaceName]="store.workspace()?.name || ''"

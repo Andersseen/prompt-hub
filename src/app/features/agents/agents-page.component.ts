@@ -1,5 +1,10 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { MOVEMENT_DIRECTIVES } from 'angular-movement';
+import {
+  SplitterContainerDirective,
+  SplitterHandleDirective,
+  SplitterPanelDirective,
+} from 'quartz-headless';
 
 import { Agent } from '../../core/models/entities';
 import { ClipboardService } from '../../core/services/clipboard.service';
@@ -11,29 +16,50 @@ import { AgentListComponent } from './agent-list.component';
 
 @Component({
   selector: 'app-agents-page',
-  imports: [AgentListComponent, AgentEditorComponent, ...MOVEMENT_DIRECTIVES],
+  imports: [
+    AgentListComponent,
+    AgentEditorComponent,
+    SplitterContainerDirective,
+    SplitterHandleDirective,
+    SplitterPanelDirective,
+    ...MOVEMENT_DIRECTIVES,
+  ],
   template: `
-    <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_440px]">
-      <app-agent-list
-        [agents]="filteredAgents()"
-        [roleMap]="roleMap()"
-        (createNew)="startEdit(newAgent())"
-        (edit)="startEdit($event)"
-        (duplicate)="duplicate($event)"
-        (copyMarkdown)="copyMarkdown()"
-        (export)="exportAgent()"
-        (remove)="remove($event)"
-      />
+    <div
+      qzSplitterContainer
+      orientation="horizontal"
+      [defaultPosition]="58"
+      [minSize]="35"
+      [maxSize]="75"
+      [step]="1"
+      style="height: calc(100vh - 140px);"
+    >
+      <div qzSplitterPanel="true" class="min-w-0 pr-2">
+        <app-agent-list
+          [agents]="filteredAgents()"
+          [roleMap]="roleMap()"
+          (createNew)="startEdit(newAgent())"
+          (edit)="startEdit($event)"
+          (duplicate)="duplicate($event)"
+          (copyMarkdown)="copyMarkdown()"
+          (export)="exportAgent()"
+          (remove)="remove($event)"
+        />
+      </div>
 
-      <app-agent-editor
-        [agent]="editingAgent()"
-        [roles]="store.roles()"
-        [skills]="store.skills()"
-        [templates]="store.promptTemplates()"
-        [markdownPreview]="markdownPreview()"
-        (save)="save($event)"
-        (copyMarkdown)="copyMarkdown()"
-      />
+      <div qzSplitterHandle></div>
+
+      <div qzSplitterPanel="false" class="min-w-0 pl-2">
+        <app-agent-editor
+          [agent]="editingAgent()"
+          [roles]="store.roles()"
+          [skills]="store.skills()"
+          [templates]="store.promptTemplates()"
+          [markdownPreview]="markdownPreview()"
+          (save)="save($event)"
+          (copyMarkdown)="copyMarkdown()"
+        />
+      </div>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

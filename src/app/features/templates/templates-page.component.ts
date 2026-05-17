@@ -1,6 +1,11 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { MOVEMENT_DIRECTIVES } from 'angular-movement';
 import { stringify } from 'yaml';
+import {
+  SplitterContainerDirective,
+  SplitterHandleDirective,
+  SplitterPanelDirective,
+} from 'quartz-headless';
 
 import { PromptTemplate } from '../../core/models/entities';
 import { ClipboardService } from '../../core/services/clipboard.service';
@@ -14,31 +19,52 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
 
 @Component({
   selector: 'app-templates-page',
-  imports: [TemplateEditorComponent, TemplateListComponent, ...MOVEMENT_DIRECTIVES],
+  imports: [
+    TemplateEditorComponent,
+    TemplateListComponent,
+    SplitterContainerDirective,
+    SplitterHandleDirective,
+    SplitterPanelDirective,
+    ...MOVEMENT_DIRECTIVES,
+  ],
   template: `
-    <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_480px]">
-      <app-template-list
-        [templates]="filteredTemplates()"
-        [frameworkName]="frameworkName()"
-        (createNew)="startEdit(newTemplate())"
-        (edit)="startEdit($event)"
-        (duplicate)="duplicate($event)"
-        (copyTemplate)="copyTemplate($event)"
-        (remove)="remove($event)"
-      />
+    <div
+      qzSplitterContainer
+      orientation="horizontal"
+      [defaultPosition]="58"
+      [minSize]="35"
+      [maxSize]="75"
+      [step]="1"
+      style="height: calc(100vh - 140px);"
+    >
+      <div qzSplitterPanel="true" class="min-w-0 pr-2">
+        <app-template-list
+          [templates]="filteredTemplates()"
+          [frameworkName]="frameworkName()"
+          (createNew)="startEdit(newTemplate())"
+          (edit)="startEdit($event)"
+          (duplicate)="duplicate($event)"
+          (copyTemplate)="copyTemplate($event)"
+          (remove)="remove($event)"
+        />
+      </div>
 
-      <app-template-editor
-        [template]="editingTemplate()"
-        [frameworks]="store.promptFrameworks()"
-        [roles]="store.roles()"
-        [sections]="sectionsForEditing()"
-        [outputMode]="outputMode()"
-        [preview]="preview()"
-        (save)="save($event)"
-        (copyOutput)="copyCurrent()"
-        (outputModeChange)="setOutputMode($event)"
-        (frameworkChange)="syncValues()"
-      />
+      <div qzSplitterHandle></div>
+
+      <div qzSplitterPanel="false" class="min-w-0 pl-2">
+        <app-template-editor
+          [template]="editingTemplate()"
+          [frameworks]="store.promptFrameworks()"
+          [roles]="store.roles()"
+          [sections]="sectionsForEditing()"
+          [outputMode]="outputMode()"
+          [preview]="preview()"
+          (save)="save($event)"
+          (copyOutput)="copyCurrent()"
+          (outputModeChange)="setOutputMode($event)"
+          (frameworkChange)="syncValues()"
+        />
+      </div>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,

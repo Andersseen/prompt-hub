@@ -1,5 +1,10 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { MOVEMENT_DIRECTIVES } from 'angular-movement';
+import {
+  SplitterContainerDirective,
+  SplitterHandleDirective,
+  SplitterPanelDirective,
+} from 'quartz-headless';
 
 import { PromptFramework } from '../../core/models/entities';
 import { WorkspaceStore } from '../../core/services/workspace-store.service';
@@ -9,21 +14,42 @@ import { FrameworkListComponent } from './framework-list.component';
 
 @Component({
   selector: 'app-frameworks-page',
-  imports: [FrameworkEditorComponent, FrameworkListComponent, ...MOVEMENT_DIRECTIVES],
+  imports: [
+    FrameworkEditorComponent,
+    FrameworkListComponent,
+    SplitterContainerDirective,
+    SplitterHandleDirective,
+    SplitterPanelDirective,
+    ...MOVEMENT_DIRECTIVES,
+  ],
   template: `
-    <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_460px]">
-      <app-framework-list
-        [frameworks]="filteredFrameworks()"
-        (createNew)="startEdit(newFramework())"
-        (edit)="startEdit($event)"
-        (duplicate)="duplicate($event)"
-        (remove)="remove($event)"
-      />
+    <div
+      qzSplitterContainer
+      orientation="horizontal"
+      [defaultPosition]="58"
+      [minSize]="35"
+      [maxSize]="75"
+      [step]="1"
+      style="height: calc(100vh - 140px);"
+    >
+      <div qzSplitterPanel="true" class="min-w-0 pr-2">
+        <app-framework-list
+          [frameworks]="filteredFrameworks()"
+          (createNew)="startEdit(newFramework())"
+          (edit)="startEdit($event)"
+          (duplicate)="duplicate($event)"
+          (remove)="remove($event)"
+        />
+      </div>
 
-      <app-framework-editor
-        [framework]="editingFramework()"
-        (save)="save($event)"
-      />
+      <div qzSplitterHandle></div>
+
+      <div qzSplitterPanel="false" class="min-w-0 pl-2">
+        <app-framework-editor
+          [framework]="editingFramework()"
+          (save)="save($event)"
+        />
+      </div>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
