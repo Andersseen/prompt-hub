@@ -1,11 +1,10 @@
-import { Component, EventEmitter, Input, Output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 
 import { VoltButton, VoltCard } from '@voltui/components';
 import { DashboardNavItem, DashboardSectionId } from './dashboard-nav.types';
 
 @Component({
   selector: 'app-dashboard-sidebar',
-  standalone: true,
   imports: [VoltButton, VoltCard],
   template: `
     <aside class="border-b border-border bg-surface p-4 lg:border-b-0 lg:border-r">
@@ -18,13 +17,13 @@ import { DashboardNavItem, DashboardSectionId } from './dashboard-nav.types';
       </div>
 
       <nav class="grid gap-1" aria-label="Primary navigation">
-        @for (item of items; track item.id) {
+        @for (item of items(); track item.id) {
           <volt-button
             variant="ghost"
             size="md"
             class="justify-start"
-            [class.bg-primary]="activeId === item.id"
-            [class.text-primary-foreground]="activeId === item.id"
+            [class.bg-foreground]="activeId() === item.id"
+            [class.text-background]="activeId() === item.id"
             (click)="sectionSelected.emit(item.id)"
           >
             {{ item.label }}
@@ -37,9 +36,10 @@ import { DashboardNavItem, DashboardSectionId } from './dashboard-nav.types';
       </volt-card>
     </aside>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardSidebarComponent {
-  @Input() items: DashboardNavItem[] = [];
-  @Input() activeId: DashboardSectionId = 'agents';
-  @Output() sectionSelected = new EventEmitter<DashboardSectionId>();
+  readonly items = input<DashboardNavItem[]>([]);
+  readonly activeId = input<DashboardSectionId>('agents');
+  readonly sectionSelected = output<DashboardSectionId>();
 }

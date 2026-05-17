@@ -1,6 +1,5 @@
 import { CommonModule } from '@angular/common';
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { MOVEMENT_DIRECTIVES } from 'angular-movement';
 import { stringify } from 'yaml';
 
@@ -30,10 +29,8 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
 
 @Component({
   selector: 'app-prompt-hub-dashboard',
-  standalone: true,
   imports: [
     CommonModule,
-    FormsModule,
     DashboardHeaderComponent,
     DashboardSidebarComponent,
     ImportExportPageComponent,
@@ -140,28 +137,28 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
       <volt-card>
         <h3 class="mb-3 text-lg font-semibold">Agent Editor</h3>
         @if (editingAgent(); as agent) {
-          <form class="grid gap-3" (ngSubmit)="saveAgent(agent)">
+          <form class="grid gap-3" (submit)="submitAgent($event, agent)">
             <volt-form-field><volt-label>Name</volt-label><volt-input name="agentName" [(value)]="agent.name" /></volt-form-field>
             <volt-form-field><volt-label>Description</volt-label><volt-textarea [rows]="4" [(value)]="agent.description" /></volt-form-field>
             <volt-form-field><volt-label>Role</volt-label>
-              <select class="form-control" name="agentRole" [(ngModel)]="agent.roleId">
+              <select class="form-control" name="agentRole" [value]="agent.roleId" (change)="agent.roleId = readSelectValue($event)">
                 <option value="">No role</option>
                 @for (role of store.roles(); track role.id) { <option [value]="role.id">{{ role.name }}</option> }
               </select>
             </volt-form-field>
             <volt-form-field><volt-label>Skills</volt-label>
-              <select class="form-control min-h-28" multiple name="agentSkills" [(ngModel)]="agent.skillIds">
-                @for (skill of store.skills(); track skill.id) { <option [value]="skill.id">{{ skill.name }}</option> }
+              <select class="form-control min-h-28" multiple name="agentSkills" (change)="agent.skillIds = readSelectedValues($event)">
+                @for (skill of store.skills(); track skill.id) { <option [value]="skill.id" [selected]="agent.skillIds.includes(skill.id)">{{ skill.name }}</option> }
               </select>
             </volt-form-field>
             <volt-form-field><volt-label>Prompt Templates</volt-label>
-              <select class="form-control min-h-28" multiple name="agentTemplates" [(ngModel)]="agent.promptTemplateIds">
-                @for (template of store.promptTemplates(); track template.id) { <option [value]="template.id">{{ template.name }}</option> }
+              <select class="form-control min-h-28" multiple name="agentTemplates" (change)="agent.promptTemplateIds = readSelectedValues($event)">
+                @for (template of store.promptTemplates(); track template.id) { <option [value]="template.id" [selected]="agent.promptTemplateIds.includes(template.id)">{{ template.name }}</option> }
               </select>
             </volt-form-field>
             <volt-form-field><volt-label>Default Constraints</volt-label><volt-textarea [rows]="4" [(value)]="agent.defaultConstraints" /></volt-form-field>
             <volt-form-field><volt-label>Output Format</volt-label><volt-textarea [rows]="4" [(value)]="agent.defaultOutputFormat" /></volt-form-field>
-            <volt-form-field><volt-label>Tags</volt-label><input class="form-control" name="agentTags" [ngModel]="formatTags(agent.tags)" (ngModelChange)="agent.tags = parseTags($event)" /></volt-form-field>
+            <volt-form-field><volt-label>Tags</volt-label><input class="form-control" name="agentTags" [value]="formatTags(agent.tags)" (input)="agent.tags = parseTags(readInputValue($event))" /></volt-form-field>
             <div class="flex flex-wrap gap-2">
               <volt-button variant="solid" type="submit">Save</volt-button>
               <volt-button (click)="copyAgent(agent)">Copy Markdown</volt-button>
@@ -198,10 +195,10 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
         <volt-card>
           <h3 class="mb-3 text-lg font-semibold">Framework Editor</h3>
           @if (editingFramework(); as framework) {
-            <form class="grid gap-3" (ngSubmit)="saveFramework(framework)">
+            <form class="grid gap-3" (submit)="submitFramework($event, framework)">
               <volt-form-field><volt-label>Name</volt-label><volt-input name="frameworkName" [(value)]="framework.name" /></volt-form-field>
               <volt-form-field><volt-label>Description</volt-label><volt-textarea [rows]="4" [(value)]="framework.description" /></volt-form-field>
-              <volt-form-field><volt-label>Tags</volt-label><input class="form-control" name="frameworkTags" [ngModel]="formatTags(framework.tags)" (ngModelChange)="framework.tags = parseTags($event)" /></volt-form-field>
+              <volt-form-field><volt-label>Tags</volt-label><input class="form-control" name="frameworkTags" [value]="formatTags(framework.tags)" (input)="framework.tags = parseTags(readInputValue($event))" /></volt-form-field>
               <div class="grid gap-2">
                 <div class="flex items-center justify-between">
                   <h4 class="font-medium text-slate-300">Sections</h4>
@@ -210,15 +207,15 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
                 @for (section of sortedSections(framework); track section.id) {
                   <div class="grid gap-2 rounded-md border border-slate-800 bg-slate-900/50 p-3">
                     <div class="grid gap-2 sm:grid-cols-[1fr_1fr_80px]">
-                      <input class="form-control" placeholder="key" name="key-{{ section.id }}" [(ngModel)]="section.key" />
-                      <input class="form-control" placeholder="label" name="label-{{ section.id }}" [(ngModel)]="section.label" />
-                      <input class="form-control" type="number" name="order-{{ section.id }}" [(ngModel)]="section.order" />
+                      <input class="form-control" placeholder="key" name="key-{{ section.id }}" [value]="section.key" (input)="section.key = readInputValue($event)" />
+                      <input class="form-control" placeholder="label" name="label-{{ section.id }}" [value]="section.label" (input)="section.label = readInputValue($event)" />
+                      <input class="form-control" type="number" name="order-{{ section.id }}" [value]="section.order" (input)="section.order = readNumberValue($event)" />
                     </div>
-                    <textarea class="form-control min-h-16" placeholder="Description" name="desc-{{ section.id }}" [(ngModel)]="section.description"></textarea>
-                    <input class="form-control" placeholder="Placeholder" name="placeholder-{{ section.id }}" [(ngModel)]="section.placeholder" />
+                    <textarea class="form-control min-h-16" placeholder="Description" name="desc-{{ section.id }}" [value]="section.description" (input)="section.description = readTextAreaValue($event)"></textarea>
+                    <input class="form-control" placeholder="Placeholder" name="placeholder-{{ section.id }}" [value]="section.placeholder" (input)="section.placeholder = readInputValue($event)" />
                     <div class="flex items-center justify-between">
                       <label class="flex items-center gap-2 text-sm text-slate-300">
-                        <input type="checkbox" name="required-{{ section.id }}" [(ngModel)]="section.required" />
+                        <input type="checkbox" name="required-{{ section.id }}" [checked]="section.required" (change)="section.required = readCheckedValue($event)" />
                         Required
                       </label>
                       <volt-button variant="destructive" (click)="removeSection(framework, section.id)">Remove</volt-button>
@@ -261,28 +258,28 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
         <volt-card>
           <h3 class="mb-3 text-lg font-semibold">Prompt Template Editor</h3>
           @if (editingTemplate(); as template) {
-            <form class="grid gap-3" (ngSubmit)="saveTemplate(template)">
+            <form class="grid gap-3" (submit)="submitTemplate($event, template)">
               <volt-form-field><volt-label>Name</volt-label><volt-input name="templateName" [(value)]="template.name" /></volt-form-field>
               <volt-form-field><volt-label>Description</volt-label><volt-textarea [rows]="4" [(value)]="template.description" /></volt-form-field>
               <volt-form-field><volt-label>Framework</volt-label>
-                <select class="form-control" name="templateFramework" [(ngModel)]="template.frameworkId" (ngModelChange)="syncTemplateValues(template)">
+                <select class="form-control" name="templateFramework" [value]="template.frameworkId" (change)="template.frameworkId = readSelectValue($event); syncTemplateValues(template)">
                   @for (framework of store.promptFrameworks(); track framework.id) { <option [value]="framework.id">{{ framework.name }}</option> }
                 </select>
               </volt-form-field>
               <volt-form-field><volt-label>Role</volt-label>
-                <select class="form-control" name="templateRole" [(ngModel)]="template.roleId">
+                <select class="form-control" name="templateRole" [value]="template.roleId" (change)="template.roleId = readSelectValue($event)">
                   <option value="">No role</option>
                   @for (role of store.roles(); track role.id) { <option [value]="role.id">{{ role.name }}</option> }
                 </select>
               </volt-form-field>
               @for (section of sectionsForTemplate(template); track section.id) {
                 <volt-form-field><volt-label>{{ section.label }}</volt-label>
-                  <textarea class="form-control min-h-24" name="value-{{ section.key }}" [placeholder]="section.placeholder" [(ngModel)]="template.values[section.key]"></textarea>
+                  <textarea class="form-control min-h-24" name="value-{{ section.key }}" [placeholder]="section.placeholder" [value]="template.values[section.key] ?? ''" (input)="template.values[section.key] = readTextAreaValue($event)"></textarea>
                 </volt-form-field>
               }
-              <volt-form-field><volt-label>Tags</volt-label><input class="form-control" name="templateTags" [ngModel]="formatTags(template.tags)" (ngModelChange)="template.tags = parseTags($event)" /></volt-form-field>
+              <volt-form-field><volt-label>Tags</volt-label><input class="form-control" name="templateTags" [value]="formatTags(template.tags)" (input)="template.tags = parseTags(readInputValue($event))" /></volt-form-field>
               <div class="flex flex-wrap gap-2">
-                <select class="form-control w-auto" name="outputMode" [(ngModel)]="outputModeValue">
+                <select class="form-control w-auto" name="outputMode" [value]="outputModeValue" (change)="outputModeValue = readOutputMode($event)">
                   <option value="markdown">Markdown</option>
                   <option value="yaml">YAML</option>
                   <option value="json">JSON</option>
@@ -332,7 +329,7 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
         </div>
         <volt-card>
           @if (kind === 'skills' && editingSkill(); as skill) {
-            <form class="grid gap-3" (ngSubmit)="saveSkill(skill)">
+            <form class="grid gap-3" (submit)="submitSkill($event, skill)">
               <h3 class="text-lg font-semibold">Skill Editor</h3>
               <volt-form-field><volt-label>Name</volt-label><volt-input name="skillName" [(value)]="skill.name" /></volt-form-field>
               <volt-form-field><volt-label>Description</volt-label><volt-textarea [rows]="4" [(value)]="skill.description" /></volt-form-field>
@@ -340,17 +337,17 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
               <volt-form-field><volt-label>Input Format</volt-label><volt-textarea [rows]="4" [(value)]="skill.inputFormat" /></volt-form-field>
               <volt-form-field><volt-label>Output Format</volt-label><volt-textarea [rows]="4" [(value)]="skill.outputFormat" /></volt-form-field>
               <volt-form-field><volt-label>Constraints</volt-label><volt-textarea [rows]="4" [(value)]="skill.constraints" /></volt-form-field>
-              <volt-form-field><volt-label>Tags</volt-label><input class="form-control" name="skillTags" [ngModel]="formatTags(skill.tags)" (ngModelChange)="skill.tags = parseTags($event)" /></volt-form-field>
+              <volt-form-field><volt-label>Tags</volt-label><input class="form-control" name="skillTags" [value]="formatTags(skill.tags)" (input)="skill.tags = parseTags(readInputValue($event))" /></volt-form-field>
               <volt-button variant="solid" type="submit">Save Skill</volt-button>
               <pre class="max-h-80 overflow-auto rounded-md bg-slate-900 p-3 text-xs text-slate-300">{{ markdown.skill(skill) }}</pre>
             </form>
           } @else if (kind === 'roles' && editingRole(); as role) {
-            <form class="grid gap-3" (ngSubmit)="saveRole(role)">
+            <form class="grid gap-3" (submit)="submitRole($event, role)">
               <h3 class="text-lg font-semibold">Role Editor</h3>
               <volt-form-field><volt-label>Name</volt-label><volt-input name="roleName" [(value)]="role.name" /></volt-form-field>
               <volt-form-field><volt-label>Description</volt-label><volt-textarea [rows]="4" [(value)]="role.description" /></volt-form-field>
               <volt-form-field><volt-label>Content</volt-label><volt-textarea [rows]="4" [(value)]="role.content" /></volt-form-field>
-              <volt-form-field><volt-label>Tags</volt-label><input class="form-control" name="roleTags" [ngModel]="formatTags(role.tags)" (ngModelChange)="role.tags = parseTags($event)" /></volt-form-field>
+              <volt-form-field><volt-label>Tags</volt-label><input class="form-control" name="roleTags" [value]="formatTags(role.tags)" (input)="role.tags = parseTags(readInputValue($event))" /></volt-form-field>
               <volt-button variant="solid" type="submit">Save Role</volt-button>
               <pre class="max-h-80 overflow-auto rounded-md bg-slate-900 p-3 text-xs text-slate-300">{{ markdown.role(role) }}</pre>
             </form>
@@ -360,6 +357,7 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
     </ng-template>
 
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PromptHubDashboardComponent implements OnInit {
   readonly store = inject(WorkspaceStore);
@@ -453,6 +451,31 @@ export class PromptHubDashboardComponent implements OnInit {
   async saveRole(role: Role): Promise<void> {
     await this.store.saveRole(role);
     this.editingRole.set(structuredClone(role));
+  }
+
+  async submitAgent(event: Event, agent: Agent): Promise<void> {
+    event.preventDefault();
+    await this.saveAgent(agent);
+  }
+
+  async submitFramework(event: Event, framework: PromptFramework): Promise<void> {
+    event.preventDefault();
+    await this.saveFramework(framework);
+  }
+
+  async submitTemplate(event: Event, template: PromptTemplate): Promise<void> {
+    event.preventDefault();
+    await this.saveTemplate(template);
+  }
+
+  async submitSkill(event: Event, skill: Skill): Promise<void> {
+    event.preventDefault();
+    await this.saveSkill(skill);
+  }
+
+  async submitRole(event: Event, role: Role): Promise<void> {
+    event.preventDefault();
+    await this.saveRole(role);
   }
 
   async duplicate(type: EntityType, id: string): Promise<void> {
@@ -629,6 +652,42 @@ export class PromptHubDashboardComponent implements OnInit {
 
   frameworkName(id: string): string {
     return this.store.promptFrameworks().find((framework) => framework.id === id)?.name ?? 'No framework';
+  }
+
+  readInputValue(event: Event): string {
+    return event.target instanceof HTMLInputElement ? event.target.value : '';
+  }
+
+  readTextAreaValue(event: Event): string {
+    return event.target instanceof HTMLTextAreaElement ? event.target.value : '';
+  }
+
+  readSelectValue(event: Event): string {
+    return event.target instanceof HTMLSelectElement ? event.target.value : '';
+  }
+
+  readNumberValue(event: Event): number {
+    const value = this.readInputValue(event);
+    const parsed = Number(value);
+    return Number.isFinite(parsed) ? parsed : 0;
+  }
+
+  readCheckedValue(event: Event): boolean {
+    return event.target instanceof HTMLInputElement ? event.target.checked : false;
+  }
+
+  readSelectedValues(event: Event): string[] {
+    if (!(event.target instanceof HTMLSelectElement)) {
+      return [];
+    }
+
+    return Array.from(event.target.selectedOptions).map((option) => option.value);
+  }
+
+  readOutputMode(event: Event): OutputMode {
+    const value = this.readSelectValue(event);
+    const modes: OutputMode[] = ['markdown', 'yaml', 'json', 'raw'];
+    return modes.includes(value as OutputMode) ? (value as OutputMode) : 'markdown';
   }
 
   asSkill(item: Skill | Role): Skill {

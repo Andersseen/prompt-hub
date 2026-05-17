@@ -1,5 +1,4 @@
-import { Component, OnInit, computed, inject, signal } from '@angular/core';
-import { FormsModule } from '@angular/forms';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { MOVEMENT_DIRECTIVES } from 'angular-movement';
 
 import { EntityType, PromptBlock, PromptBlockCategory } from '../../core/models/entities';
@@ -10,8 +9,7 @@ import { VOLT_UI } from '../../shared/ui/volt-ui';
 
 @Component({
   selector: 'app-prompt-blocks-page',
-  standalone: true,
-  imports: [FormsModule, ...VOLT_UI, ...MOVEMENT_DIRECTIVES],
+  imports: [...VOLT_UI, ...MOVEMENT_DIRECTIVES],
   template: `
     <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
       <div class="grid gap-3">
@@ -44,14 +42,19 @@ import { VOLT_UI } from '../../shared/ui/volt-ui';
 
       <volt-card>
         @if (editingBlock(); as block) {
-          <form class="grid gap-3" (ngSubmit)="saveBlock(block)">
+          <form class="grid gap-3" (submit)="submitBlock($event, block)">
             <h3 class="text-lg font-semibold">Prompt Block Editor</h3>
             <volt-form-field><volt-label>Name</volt-label><volt-input name="blockName" [(value)]="block.name" /></volt-form-field>
             <volt-form-field><volt-label>Description</volt-label><volt-textarea [rows]="4" [(value)]="block.description" /></volt-form-field>
             <volt-form-field><volt-label>Content</volt-label><volt-textarea [rows]="4" [(value)]="block.content" /></volt-form-field>
             <volt-form-field>
               <volt-label>Category</volt-label>
-              <select class="form-control" name="blockCategory" [(ngModel)]="block.category">
+              <select
+                class="form-control"
+                name="blockCategory"
+                [value]="block.category"
+                (change)="block.category = readCategoryValue($event)"
+              >
                 @for (category of blockCategories; track category) {
                   <option [value]="category">{{ category }}</option>
                 }
@@ -62,8 +65,8 @@ import { VOLT_UI } from '../../shared/ui/volt-ui';
               <input
                 class="form-control"
                 name="blockTags"
-                [ngModel]="formatTags(block.tags)"
-                (ngModelChange)="block.tags = parseTags($event)"
+                [value]="formatTags(block.tags)"
+                (input)="block.tags = parseTags(readInputValue($event))"
               />
             </volt-form-field>
             <volt-button variant="solid" type="submit">Save Block</volt-button>
@@ -72,6 +75,7 @@ import { VOLT_UI } from '../../shared/ui/volt-ui';
       </volt-card>
     </div>
   `,
+  changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class PromptBlocksPageComponent implements OnInit {
   private readonly clipboard = inject(ClipboardService);
@@ -99,6 +103,11 @@ export class PromptBlocksPageComponent implements OnInit {
   async saveBlock(block: PromptBlock): Promise<void> {
     await this.store.saveBlock(block);
     this.editingBlock.set(structuredClone(block));
+  }
+
+  async submitBlock(event: Event, block: PromptBlock): Promise<void> {
+    event.preventDefault();
+    await this.saveBlock(block);
   }
 
   newBlock(): PromptBlock {
@@ -134,5 +143,19 @@ export class PromptBlocksPageComponent implements OnInit {
 
   parseTags(value: string): string[] {
     return parseTags(value);
+  }
+
+  readInputValue(event: Event): string {
+    return event.target instanceof HTMLInputElement ? event.target.value : '';
+  }
+
+  readCategoryValue(event: Event): PromptBlockCategory {
+    const value = event.target instanceof HTMLSelectElement ? event.target.value : 'constraint';
+
+    if (this.blockCategories.includes(value as PromptBlockCategory)) {
+      return value as PromptBlockCategory;
+    }
+
+    return 'constraint';
   }
 }

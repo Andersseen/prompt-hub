@@ -1,3 +1,4 @@
+import AxeBuilder from '@axe-core/playwright';
 import { expect, test } from '@playwright/test';
 
 test('opens the local-first dashboard', async ({ page }) => {
@@ -6,4 +7,12 @@ test('opens the local-first dashboard', async ({ page }) => {
   await expect(page.getByRole('heading', { name: 'Prompt Hub' })).toBeVisible();
   await expect(page.getByRole('button', { name: 'Agents' })).toBeVisible();
   await expect(page.getByText('Your data is stored locally in this browser.')).toBeVisible();
+});
+
+test('passes axe accessibility checks on the dashboard shell', async ({ page }) => {
+  await page.goto('/');
+
+  const results = await new AxeBuilder({ page }).analyze();
+
+  expect(results.violations).toEqual([]);
 });
