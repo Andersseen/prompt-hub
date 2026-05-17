@@ -7,8 +7,8 @@ describe('Home page', () => {
   it('renders the local-first dashboard shell', async () => {
     await render(Home);
 
-    expect(await screen.findByText('Prompt Hub')).toBeInTheDocument();
-    expect(screen.getByText('Define once. Reuse anywhere.')).toBeInTheDocument();
+    expect(await screen.findByText('Workspace')).toBeInTheDocument();
+    expect(screen.getByText('Local-first prompt management')).toBeInTheDocument();
     expect(screen.getByRole('button', { name: 'Agents' })).toBeInTheDocument();
   });
 });
