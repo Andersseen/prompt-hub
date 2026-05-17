@@ -1,0 +1,16 @@
+{
+  "name": "Prompt Hub",
+  "short_name": "Prompt Hub",
+  "description": "Local-first workspace for structured prompts, skills, roles and agents.",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#07111f",
+  "theme_color": "#07111f",
+  "icons": [
+    {
+      "src": "/favicon.svg",
+      "sizes": "64x64",
+      "type": "image/svg+xml"
+    }
+  ]
+}
