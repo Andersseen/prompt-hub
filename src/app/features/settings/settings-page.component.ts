@@ -1,13 +1,13 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@angular/core';
 import { FormControl, FormGroup, ReactiveFormsModule, Validators } from '@angular/forms';
 
+import { VoltButton, VoltCard, VoltFormField, VoltInput, VoltLabel } from '@voltui/components';
 import { AppSettings } from '../../core/models/entities';
 import { WorkspaceStore } from '../../core/services/workspace-store.service';
-import { VOLT_UI } from '../../shared/ui/volt-ui';
 
 @Component({
   selector: 'app-settings-page',
-  imports: [ReactiveFormsModule, ...VOLT_UI],
+  imports: [ReactiveFormsModule, VoltButton, VoltCard, VoltFormField, VoltInput, VoltLabel],
   template: `
     <volt-card>
       @if (settings(); as settings) {

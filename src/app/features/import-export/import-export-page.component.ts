@@ -1,15 +1,15 @@
 import { ChangeDetectionStrategy, Component, inject, signal } from '@angular/core';
 
+import { VoltButton, VoltCard } from '@voltui/components';
 import { ClipboardService } from '../../core/services/clipboard.service';
 import { ExportImportService } from '../../core/services/export-import.service';
 import { WorkspaceStore } from '../../core/services/workspace-store.service';
-import { VOLT_UI } from '../../shared/ui/volt-ui';
 
 type WorkspaceExportMode = 'json' | 'yaml' | 'markdown';
 
 @Component({
   selector: 'app-import-export-page',
-  imports: [...VOLT_UI],
+  imports: [VoltButton, VoltCard],
   template: `
     <div class="grid gap-4 xl:grid-cols-2">
       <volt-card>

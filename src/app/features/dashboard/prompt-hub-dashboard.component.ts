@@ -12,6 +12,15 @@ import {
   Role,
   Skill,
 } from '../../core/models/entities';
+import {
+  VoltBadge,
+  VoltButton,
+  VoltCard,
+  VoltFormField,
+  VoltInput,
+  VoltLabel,
+  VoltTextarea,
+} from '@voltui/components';
 import { ClipboardService } from '../../core/services/clipboard.service';
 import { MarkdownService } from '../../core/services/markdown.service';
 import { WorkspaceStore } from '../../core/services/workspace-store.service';
@@ -19,7 +28,6 @@ import { createId, formatTags, parseTags, withTimestamps } from '../../core/util
 import { ImportExportPageComponent } from '../import-export/import-export-page.component';
 import { PromptBlocksPageComponent } from '../prompt-blocks/prompt-blocks-page.component';
 import { SettingsPageComponent } from '../settings/settings-page.component';
-import { VOLT_UI } from '../../shared/ui/volt-ui';
 import { DashboardHeaderComponent } from './dashboard-header.component';
 import { DashboardNavItem, DashboardSectionId } from './dashboard-nav.types';
 import { DashboardSidebarComponent } from './dashboard-sidebar.component';
@@ -36,7 +44,13 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
     ImportExportPageComponent,
     PromptBlocksPageComponent,
     SettingsPageComponent,
-    ...VOLT_UI,
+    VoltBadge,
+    VoltButton,
+    VoltCard,
+    VoltFormField,
+    VoltInput,
+    VoltLabel,
+    VoltTextarea,
     ...MOVEMENT_DIRECTIVES,
   ],
   template: `
@@ -158,7 +172,10 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
             </volt-form-field>
             <volt-form-field><volt-label>Default Constraints</volt-label><volt-textarea [rows]="4" [(value)]="agent.defaultConstraints" /></volt-form-field>
             <volt-form-field><volt-label>Output Format</volt-label><volt-textarea [rows]="4" [(value)]="agent.defaultOutputFormat" /></volt-form-field>
-            <volt-form-field><volt-label>Tags</volt-label><input class="form-control" name="agentTags" [value]="formatTags(agent.tags)" (input)="agent.tags = parseTags(readInputValue($event))" /></volt-form-field>
+            <volt-form-field>
+              <volt-label>Tags</volt-label>
+              <volt-input name="agentTags" [value]="formatTags(agent.tags)" (valueChange)="agent.tags = parseTags($event)" />
+            </volt-form-field>
             <div class="flex flex-wrap gap-2">
               <volt-button variant="solid" type="submit">Save</volt-button>
               <volt-button (click)="copyAgent(agent)">Copy Markdown</volt-button>
@@ -198,7 +215,10 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
             <form class="grid gap-3" (submit)="submitFramework($event, framework)">
               <volt-form-field><volt-label>Name</volt-label><volt-input name="frameworkName" [(value)]="framework.name" /></volt-form-field>
               <volt-form-field><volt-label>Description</volt-label><volt-textarea [rows]="4" [(value)]="framework.description" /></volt-form-field>
-              <volt-form-field><volt-label>Tags</volt-label><input class="form-control" name="frameworkTags" [value]="formatTags(framework.tags)" (input)="framework.tags = parseTags(readInputValue($event))" /></volt-form-field>
+              <volt-form-field>
+              <volt-label>Tags</volt-label>
+              <volt-input name="frameworkTags" [value]="formatTags(framework.tags)" (valueChange)="framework.tags = parseTags($event)" />
+            </volt-form-field>
               <div class="grid gap-2">
                 <div class="flex items-center justify-between">
                   <h4 class="font-medium text-slate-300">Sections</h4>
@@ -277,7 +297,10 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
                   <textarea class="form-control min-h-24" name="value-{{ section.key }}" [placeholder]="section.placeholder" [value]="template.values[section.key] ?? ''" (input)="template.values[section.key] = readTextAreaValue($event)"></textarea>
                 </volt-form-field>
               }
-              <volt-form-field><volt-label>Tags</volt-label><input class="form-control" name="templateTags" [value]="formatTags(template.tags)" (input)="template.tags = parseTags(readInputValue($event))" /></volt-form-field>
+              <volt-form-field>
+              <volt-label>Tags</volt-label>
+              <volt-input name="templateTags" [value]="formatTags(template.tags)" (valueChange)="template.tags = parseTags($event)" />
+            </volt-form-field>
               <div class="flex flex-wrap gap-2">
                 <select class="form-control w-auto" name="outputMode" [value]="outputModeValue" (change)="outputModeValue = readOutputMode($event)">
                   <option value="markdown">Markdown</option>
@@ -337,7 +360,10 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
               <volt-form-field><volt-label>Input Format</volt-label><volt-textarea [rows]="4" [(value)]="skill.inputFormat" /></volt-form-field>
               <volt-form-field><volt-label>Output Format</volt-label><volt-textarea [rows]="4" [(value)]="skill.outputFormat" /></volt-form-field>
               <volt-form-field><volt-label>Constraints</volt-label><volt-textarea [rows]="4" [(value)]="skill.constraints" /></volt-form-field>
-              <volt-form-field><volt-label>Tags</volt-label><input class="form-control" name="skillTags" [value]="formatTags(skill.tags)" (input)="skill.tags = parseTags(readInputValue($event))" /></volt-form-field>
+              <volt-form-field>
+              <volt-label>Tags</volt-label>
+              <volt-input name="skillTags" [value]="formatTags(skill.tags)" (valueChange)="skill.tags = parseTags($event)" />
+            </volt-form-field>
               <volt-button variant="solid" type="submit">Save Skill</volt-button>
               <pre class="max-h-80 overflow-auto rounded-md bg-slate-900 p-3 text-xs text-slate-300">{{ markdown.skill(skill) }}</pre>
             </form>
@@ -347,7 +373,10 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
               <volt-form-field><volt-label>Name</volt-label><volt-input name="roleName" [(value)]="role.name" /></volt-form-field>
               <volt-form-field><volt-label>Description</volt-label><volt-textarea [rows]="4" [(value)]="role.description" /></volt-form-field>
               <volt-form-field><volt-label>Content</volt-label><volt-textarea [rows]="4" [(value)]="role.content" /></volt-form-field>
-              <volt-form-field><volt-label>Tags</volt-label><input class="form-control" name="roleTags" [value]="formatTags(role.tags)" (input)="role.tags = parseTags(readInputValue($event))" /></volt-form-field>
+              <volt-form-field>
+              <volt-label>Tags</volt-label>
+              <volt-input name="roleTags" [value]="formatTags(role.tags)" (valueChange)="role.tags = parseTags($event)" />
+            </volt-form-field>
               <volt-button variant="solid" type="submit">Save Role</volt-button>
               <pre class="max-h-80 overflow-auto rounded-md bg-slate-900 p-3 text-xs text-slate-300">{{ markdown.role(role) }}</pre>
             </form>

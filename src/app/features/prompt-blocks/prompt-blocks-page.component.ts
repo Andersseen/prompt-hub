@@ -1,15 +1,24 @@
 import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
 import { MOVEMENT_DIRECTIVES } from 'angular-movement';
 
+import { VoltBadge, VoltButton, VoltCard, VoltFormField, VoltInput, VoltLabel, VoltTextarea } from '@voltui/components';
 import { EntityType, PromptBlock, PromptBlockCategory } from '../../core/models/entities';
 import { ClipboardService } from '../../core/services/clipboard.service';
 import { WorkspaceStore } from '../../core/services/workspace-store.service';
 import { formatTags, parseTags, withTimestamps } from '../../core/utils/entity-utils';
-import { VOLT_UI } from '../../shared/ui/volt-ui';
 
 @Component({
   selector: 'app-prompt-blocks-page',
-  imports: [...VOLT_UI, ...MOVEMENT_DIRECTIVES],
+  imports: [
+    VoltBadge,
+    VoltButton,
+    VoltCard,
+    VoltFormField,
+    VoltInput,
+    VoltLabel,
+    VoltTextarea,
+    ...MOVEMENT_DIRECTIVES,
+  ],
   template: `
     <div class="grid gap-4 xl:grid-cols-[minmax(0,1fr)_420px]">
       <div class="grid gap-3">
@@ -62,12 +71,7 @@ import { VOLT_UI } from '../../shared/ui/volt-ui';
             </volt-form-field>
             <volt-form-field>
               <volt-label>Tags</volt-label>
-              <input
-                class="form-control"
-                name="blockTags"
-                [value]="formatTags(block.tags)"
-                (input)="block.tags = parseTags(readInputValue($event))"
-              />
+              <volt-input name="blockTags" [value]="formatTags(block.tags)" (valueChange)="block.tags = parseTags($event)" />
             </volt-form-field>
             <volt-button variant="solid" type="submit">Save Block</volt-button>
           </form>

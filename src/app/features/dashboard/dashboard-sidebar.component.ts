@@ -3,6 +3,8 @@ import { ChangeDetectionStrategy, Component, input, output } from '@angular/core
 import { VoltButton, VoltCard } from '@voltui/components';
 import { DashboardNavItem, DashboardSectionId } from './dashboard-nav.types';
 
+// Individual imports - no barrel
+
 @Component({
   selector: 'app-dashboard-sidebar',
   imports: [VoltButton, VoltCard],
