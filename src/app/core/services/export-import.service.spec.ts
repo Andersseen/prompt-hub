@@ -1,17 +1,19 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { appDatabase } from '../db/app-database';
+import { AppDatabase } from '../db/app-database';
 import { ExportImportService } from './export-import.service';
 import { SeedService } from './seed.service';
 
 describe('ExportImportService', () => {
   let service: ExportImportService;
+  let db: AppDatabase;
 
   beforeEach(async () => {
-    await appDatabase.delete();
-    await appDatabase.open();
-    await new SeedService().seedIfEmpty();
+    db = TestBed.inject(AppDatabase);
+    await db.delete();
+    await db.open();
+    await TestBed.inject(SeedService).seedIfEmpty();
     service = TestBed.inject(ExportImportService);
   });
 

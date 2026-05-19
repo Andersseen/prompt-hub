@@ -1,3 +1,4 @@
+import { Injectable } from '@angular/core';
 import Dexie, { Table } from 'dexie';
 
 import {
@@ -11,6 +12,7 @@ import {
   Workspace,
 } from '../models/entities';
 
+@Injectable({ providedIn: 'root' })
 export class AppDatabase extends Dexie {
   workspaces!: Table<Workspace, string>;
   roles!: Table<Role, string>;
@@ -36,5 +38,3 @@ export class AppDatabase extends Dexie {
     });
   }
 }
-
-export const appDatabase = new AppDatabase();

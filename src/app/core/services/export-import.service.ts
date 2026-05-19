@@ -1,17 +1,18 @@
 import { Injectable, inject } from '@angular/core';
 import { parse, stringify } from 'yaml';
 
-import { appDatabase } from '../db/app-database';
+import { AppDatabase } from '../db/app-database';
 import { WorkspaceExportSchema, type WorkspaceExportValidated } from '../models/entity-schemas';
 import { MarkdownService } from './markdown.service';
 
 @Injectable({ providedIn: 'root' })
 export class ExportImportService {
+  private readonly db = inject(AppDatabase);
   private readonly markdown = inject(MarkdownService);
 
   async collectWorkspace(): Promise<WorkspaceExportValidated> {
-    const [workspace] = await appDatabase.workspaces.toArray();
-    const [settings] = await appDatabase.settings.toArray();
+    const [workspace] = await this.db.workspaces.toArray();
+    const [settings] = await this.db.settings.toArray();
 
     if (!workspace || !settings) {
       throw new Error('Workspace is not initialized.');
@@ -21,12 +22,12 @@ export class ExportImportService {
       schemaVersion: workspace.schemaVersion,
       exportedAt: new Date().toISOString(),
       workspace,
-      roles: await appDatabase.roles.toArray(),
-      promptFrameworks: await appDatabase.promptFrameworks.toArray(),
-      promptTemplates: await appDatabase.promptTemplates.toArray(),
-      agents: await appDatabase.agents.toArray(),
-      skills: await appDatabase.skills.toArray(),
-      promptBlocks: await appDatabase.promptBlocks.toArray(),
+      roles: await this.db.roles.toArray(),
+      promptFrameworks: await this.db.promptFrameworks.toArray(),
+      promptTemplates: await this.db.promptTemplates.toArray(),
+      agents: await this.db.agents.toArray(),
+      skills: await this.db.skills.toArray(),
+      promptBlocks: await this.db.promptBlocks.toArray(),
       settings,
     };
   }
@@ -71,36 +72,36 @@ export class ExportImportService {
   }
 
   async replaceWorkspace(data: WorkspaceExportValidated): Promise<void> {
-    await appDatabase.transaction(
+    await this.db.transaction(
       'rw',
       [
-        appDatabase.workspaces,
-        appDatabase.roles,
-        appDatabase.promptFrameworks,
-        appDatabase.promptTemplates,
-        appDatabase.agents,
-        appDatabase.skills,
-        appDatabase.promptBlocks,
-        appDatabase.settings,
+        this.db.workspaces,
+        this.db.roles,
+        this.db.promptFrameworks,
+        this.db.promptTemplates,
+        this.db.agents,
+        this.db.skills,
+        this.db.promptBlocks,
+        this.db.settings,
       ],
       async () => {
-        await appDatabase.workspaces.clear();
-        await appDatabase.roles.clear();
-        await appDatabase.promptFrameworks.clear();
-        await appDatabase.promptTemplates.clear();
-        await appDatabase.agents.clear();
-        await appDatabase.skills.clear();
-        await appDatabase.promptBlocks.clear();
-        await appDatabase.settings.clear();
+        await this.db.workspaces.clear();
+        await this.db.roles.clear();
+        await this.db.promptFrameworks.clear();
+        await this.db.promptTemplates.clear();
+        await this.db.agents.clear();
+        await this.db.skills.clear();
+        await this.db.promptBlocks.clear();
+        await this.db.settings.clear();
 
-        await appDatabase.workspaces.add(data.workspace);
-        await appDatabase.roles.bulkAdd(data.roles);
-        await appDatabase.promptFrameworks.bulkAdd(data.promptFrameworks);
-        await appDatabase.promptTemplates.bulkAdd(data.promptTemplates);
-        await appDatabase.agents.bulkAdd(data.agents);
-        await appDatabase.skills.bulkAdd(data.skills);
-        await appDatabase.promptBlocks.bulkAdd(data.promptBlocks);
-        await appDatabase.settings.add(data.settings);
+        await this.db.workspaces.add(data.workspace);
+        await this.db.roles.bulkAdd(data.roles);
+        await this.db.promptFrameworks.bulkAdd(data.promptFrameworks);
+        await this.db.promptTemplates.bulkAdd(data.promptTemplates);
+        await this.db.agents.bulkAdd(data.agents);
+        await this.db.skills.bulkAdd(data.skills);
+        await this.db.promptBlocks.bulkAdd(data.promptBlocks);
+        await this.db.settings.add(data.settings);
       }
     );
   }
