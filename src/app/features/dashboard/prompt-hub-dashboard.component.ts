@@ -32,8 +32,8 @@ import { DashboardSidebarComponent } from './dashboard-sidebar.component';
             [showFilters]="!isUtilityRoute()"
             [search]="store.search()"
             [tagFilter]="store.tagFilter()"
-            (searchChange)="store.search.set($event)"
-            (tagFilterChange)="store.tagFilter.set($event)"
+            (searchChange)="store.setSearch($event)"
+            (tagFilterChange)="store.setTagFilter($event)"
           />
 
           @if (store.loading()) {

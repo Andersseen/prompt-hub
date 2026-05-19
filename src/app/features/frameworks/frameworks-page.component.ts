@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal, type Signal } from '@angular/core';
 import { MOVEMENT_DIRECTIVES } from 'angular-movement';
 import {
   SplitterContainerDirective,
@@ -7,6 +7,7 @@ import {
 } from 'quartz-headless';
 
 import { PromptFramework } from '../../core/models/entities';
+import { type HasDirtyCheck } from '../../core/guards/dirty-check.guard';
 import { WorkspaceStore } from '../../core/services/workspace-store.service';
 import { withTimestamps } from '../../core/utils/entity-utils';
 import { FrameworkEditorComponent } from './framework-editor.component';
@@ -47,17 +48,21 @@ import { FrameworkListComponent } from './framework-list.component';
       <div qzSplitterPanel="false" class="min-w-0 pl-2">
         <app-framework-editor
           [framework]="editingFramework()"
+          [saving]="store.saving()"
           (save)="save($event)"
+          (dirtyChange)="editorDirty.set($event)"
         />
       </div>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class FrameworksPageComponent implements OnInit {
+export class FrameworksPageComponent implements OnInit, HasDirtyCheck {
   readonly store = inject(WorkspaceStore);
 
   readonly editingFramework = signal<PromptFramework | undefined>(undefined);
+  readonly editorDirty = signal(false);
+  readonly isDirty: Signal<boolean> = computed(() => this.editorDirty());
   readonly filteredFrameworks = computed(() => this.store.filterByQuery(this.store.promptFrameworks()));
 
   ngOnInit(): void {

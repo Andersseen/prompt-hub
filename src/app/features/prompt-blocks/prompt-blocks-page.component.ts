@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal, type Signal } from '@angular/core';
 import { MOVEMENT_DIRECTIVES } from 'angular-movement';
 import {
   SplitterContainerDirective,
@@ -8,6 +8,7 @@ import {
 
 import { VoltBadge, VoltButton, VoltCard, VoltFormField, VoltInput, VoltLabel, VoltTextarea } from '@voltui/components';
 import { EntityType, PromptBlock, PromptBlockCategory } from '../../core/models/entities';
+import { type HasDirtyCheck } from '../../core/guards/dirty-check.guard';
 import { ClipboardService } from '../../core/services/clipboard.service';
 import { WorkspaceStore } from '../../core/services/workspace-store.service';
 import { withTimestamps } from '../../core/utils/entity-utils';
@@ -128,7 +129,7 @@ import { TagInputComponent } from '../../shared/components/tag-input.component';
         <div class="editor-panel flex flex-col gap-5">
           <div class="flex items-center justify-between border-b border-border pb-3">
             <h3 class="text-sm font-semibold">Block Editor</h3>
-            <volt-button variant="solid" size="sm" (click)="saveCurrent()">Save</volt-button>
+            <volt-button variant="solid" size="sm" [disabled]="store.saving()" (click)="saveCurrent()">Save</volt-button>
           </div>
 
           @if (editingBlock(); as block) {
@@ -178,7 +179,7 @@ import { TagInputComponent } from '../../shared/components/tag-input.component';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PromptBlocksPageComponent implements OnInit {
+export class PromptBlocksPageComponent implements OnInit, HasDirtyCheck {
   private readonly clipboard = inject(ClipboardService);
   readonly store = inject(WorkspaceStore);
   readonly editingBlock = signal<PromptBlock | undefined>(undefined);
@@ -192,6 +193,14 @@ export class PromptBlocksPageComponent implements OnInit {
     'coding-rule',
     'reasoning-rule',
   ];
+
+  readonly isDirty: Signal<boolean> = computed(() => {
+    const draft = this.editingBlock();
+    if (!draft) return false;
+    const original = this.store.promptBlocks().find((b) => b.id === draft.id);
+    if (!original) return true;
+    return JSON.stringify(draft) !== JSON.stringify(original);
+  });
 
   ngOnInit(): void {
     this.editingBlock.set(this.store.promptBlocks()[0] ? structuredClone(this.store.promptBlocks()[0]) : this.newBlock());

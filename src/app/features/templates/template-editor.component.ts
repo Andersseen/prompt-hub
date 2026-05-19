@@ -23,7 +23,7 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
       <div class="flex items-center justify-between border-b border-border pb-3">
         <h3 class="text-sm font-semibold">Template Editor</h3>
         <div class="flex gap-2">
-          <volt-button variant="solid" size="sm" (click)="saveCurrent()">Save</volt-button>
+          <volt-button variant="solid" size="sm" [disabled]="saving()" (click)="saveCurrent()">Save</volt-button>
           <volt-button variant="outline" size="sm" (click)="copyOutput.emit()">Copy</volt-button>
         </div>
       </div>
@@ -144,11 +144,13 @@ export class TemplateEditorComponent {
   readonly sections = input<PromptFrameworkSection[]>([]);
   readonly outputMode = input<OutputMode>('markdown');
   readonly preview = input('');
+  readonly saving = input(false);
 
   readonly save = output<PromptTemplate>();
   readonly copyOutput = output<void>();
   readonly outputModeChange = output<OutputMode>();
   readonly frameworkChange = output<string>();
+  readonly dirtyChange = output<boolean>();
 
   readonly draft = signal<PromptTemplate | undefined>(undefined);
 
@@ -156,6 +158,13 @@ export class TemplateEditorComponent {
     effect(() => {
       const t = this.template();
       untracked(() => this.draft.set(t ? structuredClone(t) : undefined));
+    });
+
+    effect(() => {
+      const d = this.draft();
+      const t = untracked(this.template);
+      const dirty = d && t ? JSON.stringify(d) !== JSON.stringify(t) : false;
+      untracked(() => this.dirtyChange.emit(dirty));
     });
   }
 

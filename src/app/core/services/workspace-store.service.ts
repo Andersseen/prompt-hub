@@ -47,12 +47,15 @@ export class WorkspaceStore {
   readonly promptBlocks = this.blockStore.items;
   readonly settings = this.settingsStore.item;
   readonly loading = signal(true);
+  readonly saving = signal(false);
   readonly activeSection = signal<EntityType | 'importExport'>('agents');
   readonly search = signal('');
   readonly tagFilter = signal('');
   readonly toast = signal('');
 
   private isRefreshing = false;
+  private searchTimeoutId: ReturnType<typeof setTimeout> | null = null;
+  private tagFilterTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
   readonly activeTitle = computed(() => {
     const titles: Record<string, string> = {
@@ -108,84 +111,125 @@ export class WorkspaceStore {
     }
   }
 
+  setSearch(value: string): void {
+    if (this.searchTimeoutId) {
+      clearTimeout(this.searchTimeoutId);
+    }
+    this.searchTimeoutId = setTimeout(() => this.search.set(value), 200);
+  }
+
+  setTagFilter(value: string): void {
+    if (this.tagFilterTimeoutId) {
+      clearTimeout(this.tagFilterTimeoutId);
+    }
+    this.tagFilterTimeoutId = setTimeout(() => this.tagFilter.set(value), 200);
+  }
+
   async saveRole(role: Role): Promise<void> {
+    this.saving.set(true);
     try {
       await this.roleStore.save(role);
       this.notify('Role saved.');
     } catch (err) {
       this.handleError(err, 'save role');
+    } finally {
+      this.saving.set(false);
     }
   }
 
   async saveFramework(framework: PromptFramework): Promise<void> {
+    this.saving.set(true);
     try {
       await this.frameworkStore.save(framework);
       this.notify('Framework saved.');
     } catch (err) {
       this.handleError(err, 'save framework');
+    } finally {
+      this.saving.set(false);
     }
   }
 
   async saveTemplate(template: PromptTemplate): Promise<void> {
+    this.saving.set(true);
     try {
       await this.templateStore.save(template);
       this.notify('Prompt template saved.');
     } catch (err) {
       this.handleError(err, 'save template');
+    } finally {
+      this.saving.set(false);
     }
   }
 
   async saveAgent(agent: Agent): Promise<void> {
+    this.saving.set(true);
     try {
       await this.agentStore.save(agent);
       this.notify('Agent saved.');
     } catch (err) {
       this.handleError(err, 'save agent');
+    } finally {
+      this.saving.set(false);
     }
   }
 
   async saveSkill(skill: Skill): Promise<void> {
+    this.saving.set(true);
     try {
       await this.skillStore.save(skill);
       this.notify('Skill saved.');
     } catch (err) {
       this.handleError(err, 'save skill');
+    } finally {
+      this.saving.set(false);
     }
   }
 
   async saveBlock(block: PromptBlock): Promise<void> {
+    this.saving.set(true);
     try {
       await this.blockStore.save(block);
       this.notify('Prompt block saved.');
     } catch (err) {
       this.handleError(err, 'save block');
+    } finally {
+      this.saving.set(false);
     }
   }
 
   async saveSettings(settings: AppSettings): Promise<void> {
+    this.saving.set(true);
     try {
       await this.settingsStore.save(settings);
       this.notify('Settings saved.');
     } catch (err) {
       this.handleError(err, 'save settings');
+    } finally {
+      this.saving.set(false);
     }
   }
 
   async duplicate(type: EntityType, id: string): Promise<void> {
+    this.saving.set(true);
     try {
       await this.storeFor(type).duplicate(id);
       this.notify('Duplicated.');
     } catch (err) {
       this.handleError(err, 'duplicate');
+    } finally {
+      this.saving.set(false);
     }
   }
 
   async delete(type: EntityType, id: string): Promise<void> {
+    this.saving.set(true);
     try {
       await this.storeFor(type).delete(id);
       this.notify('Deleted.');
     } catch (err) {
       this.handleError(err, 'delete');
+    } finally {
+      this.saving.set(false);
     }
   }
 

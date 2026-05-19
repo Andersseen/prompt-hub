@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal, type Signal } from '@angular/core';
 import { MOVEMENT_DIRECTIVES } from 'angular-movement';
 import {
   SplitterContainerDirective,
@@ -7,6 +7,7 @@ import {
 } from 'quartz-headless';
 
 import { Role } from '../../core/models/entities';
+import { type HasDirtyCheck } from '../../core/guards/dirty-check.guard';
 import { ClipboardService } from '../../core/services/clipboard.service';
 import { MarkdownService } from '../../core/services/markdown.service';
 import { WorkspaceStore } from '../../core/services/workspace-store.service';
@@ -123,7 +124,7 @@ import { VoltButton, VoltCard, VoltFormField, VoltInput, VoltLabel, VoltTextarea
         <div class="editor-panel flex flex-col gap-5">
           <div class="flex items-center justify-between border-b border-border pb-3">
             <h3 class="text-sm font-semibold">Role Editor</h3>
-            <volt-button variant="solid" size="sm" (click)="saveCurrent()">Save</volt-button>
+            <volt-button variant="solid" size="sm" [disabled]="store.saving()" (click)="saveCurrent()">Save</volt-button>
           </div>
 
           @if (editingRole(); as role) {
@@ -166,7 +167,7 @@ import { VoltButton, VoltCard, VoltFormField, VoltInput, VoltLabel, VoltTextarea
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RolesPageComponent implements OnInit {
+export class RolesPageComponent implements OnInit, HasDirtyCheck {
   readonly store = inject(WorkspaceStore);
   private readonly markdown = inject(MarkdownService);
   private readonly clipboard = inject(ClipboardService);
@@ -176,6 +177,14 @@ export class RolesPageComponent implements OnInit {
   readonly markdownPreview = computed(() => {
     const role = this.editingRole();
     return role ? this.markdown.role(role) : '';
+  });
+
+  readonly isDirty: Signal<boolean> = computed(() => {
+    const draft = this.editingRole();
+    if (!draft) return false;
+    const original = this.store.roles().find((r) => r.id === draft.id);
+    if (!original) return true;
+    return JSON.stringify(draft) !== JSON.stringify(original);
   });
 
   ngOnInit(): void {

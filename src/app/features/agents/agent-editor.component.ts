@@ -22,7 +22,7 @@ import { TagInputComponent } from '../../shared/components/tag-input.component';
       <div class="flex items-center justify-between border-b border-border pb-3">
         <h3 class="text-sm font-semibold">Agent Editor</h3>
         <div class="flex gap-2">
-          <volt-button variant="solid" size="sm" type="submit" (click)="saveCurrent()">Save</volt-button>
+          <volt-button variant="solid" size="sm" type="submit" [disabled]="saving()" (click)="saveCurrent()">Save</volt-button>
           <volt-button variant="outline" size="sm" (click)="copyMarkdown.emit()">Copy</volt-button>
         </div>
       </div>
@@ -126,9 +126,11 @@ export class AgentEditorComponent {
   readonly skills = input<Skill[]>([]);
   readonly templates = input<PromptTemplate[]>([]);
   readonly markdownPreview = input('');
+  readonly saving = input(false);
 
   readonly save = output<Agent>();
   readonly copyMarkdown = output<void>();
+  readonly dirtyChange = output<boolean>();
 
   readonly draft = signal<Agent | undefined>(undefined);
 
@@ -136,6 +138,13 @@ export class AgentEditorComponent {
     effect(() => {
       const a = this.agent();
       untracked(() => this.draft.set(a ? structuredClone(a) : undefined));
+    });
+
+    effect(() => {
+      const d = this.draft();
+      const a = untracked(this.agent);
+      const dirty = d && a ? JSON.stringify(d) !== JSON.stringify(a) : false;
+      untracked(() => this.dirtyChange.emit(dirty));
     });
   }
 

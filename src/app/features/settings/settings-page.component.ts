@@ -82,7 +82,7 @@ import { WorkspaceStore } from '../../core/services/workspace-store.service';
               </label>
             </div>
 
-            <volt-button variant="solid" size="sm" type="submit">Save Settings</volt-button>
+            <volt-button variant="solid" size="sm" type="submit" [disabled]="store.saving()">Save Settings</volt-button>
           </form>
         }
       </div>

@@ -20,7 +20,7 @@ import { TagInputComponent } from '../../shared/components/tag-input.component';
     <div class="editor-panel flex flex-col gap-5">
       <div class="flex items-center justify-between border-b border-border pb-3">
         <h3 class="text-sm font-semibold">Framework Editor</h3>
-        <volt-button variant="solid" size="sm" (click)="saveCurrent()">Save</volt-button>
+        <volt-button variant="solid" size="sm" [disabled]="saving()" (click)="saveCurrent()">Save</volt-button>
       </div>
 
       @if (draft(); as fw) {
@@ -123,8 +123,10 @@ import { TagInputComponent } from '../../shared/components/tag-input.component';
 })
 export class FrameworkEditorComponent {
   readonly framework = input<PromptFramework | undefined>(undefined);
+  readonly saving = input(false);
 
   readonly save = output<PromptFramework>();
+  readonly dirtyChange = output<boolean>();
 
   readonly draft = signal<PromptFramework | undefined>(undefined);
 
@@ -132,6 +134,13 @@ export class FrameworkEditorComponent {
     effect(() => {
       const fw = this.framework();
       untracked(() => this.draft.set(fw ? structuredClone(fw) : undefined));
+    });
+
+    effect(() => {
+      const d = this.draft();
+      const fw = untracked(this.framework);
+      const dirty = d && fw ? JSON.stringify(d) !== JSON.stringify(fw) : false;
+      untracked(() => this.dirtyChange.emit(dirty));
     });
   }
 
