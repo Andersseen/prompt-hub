@@ -130,12 +130,12 @@ import { VoltButton, VoltCard, VoltFormField, VoltInput, VoltLabel, VoltTextarea
             <form class="flex flex-col gap-4" (submit)="save(skill)">
               <volt-form-field>
                 <volt-label>Name</volt-label>
-                <volt-input name="skillName" [(value)]="skill.name" />
+                <volt-input name="skillName" [value]="skill.name" (valueChange)="updateField('name', $event)" />
               </volt-form-field>
 
               <volt-form-field>
                 <volt-label>Description</volt-label>
-                <volt-textarea [rows]="3" [(value)]="skill.description" />
+                <volt-textarea [rows]="3" [value]="skill.description" (valueChange)="updateField('description', $event)" />
               </volt-form-field>
 
               <div class="rounded-lg border border-border bg-background p-3">
@@ -143,24 +143,24 @@ import { VoltButton, VoltCard, VoltFormField, VoltInput, VoltLabel, VoltTextarea
                 <div class="flex flex-col gap-3">
                   <volt-form-field>
                     <volt-label>Instructions</volt-label>
-                    <volt-textarea [rows]="4" [(value)]="skill.instructions" />
+                    <volt-textarea [rows]="4" [value]="skill.instructions" (valueChange)="updateField('instructions', $event)" />
                   </volt-form-field>
                   <volt-form-field>
                     <volt-label>Input Format</volt-label>
-                    <volt-textarea [rows]="3" [(value)]="skill.inputFormat" />
+                    <volt-textarea [rows]="3" [value]="skill.inputFormat" (valueChange)="updateField('inputFormat', $event)" />
                   </volt-form-field>
                   <volt-form-field>
                     <volt-label>Output Format</volt-label>
-                    <volt-textarea [rows]="3" [(value)]="skill.outputFormat" />
+                    <volt-textarea [rows]="3" [value]="skill.outputFormat" (valueChange)="updateField('outputFormat', $event)" />
                   </volt-form-field>
                   <volt-form-field>
                     <volt-label>Constraints</volt-label>
-                    <volt-textarea [rows]="3" [(value)]="skill.constraints" />
+                    <volt-textarea [rows]="3" [value]="skill.constraints" (valueChange)="updateField('constraints', $event)" />
                   </volt-form-field>
                 </div>
               </div>
 
-              <app-tag-input name="skillTags" [tags]="skill.tags" (tagsChange)="skill.tags = $event" />
+              <app-tag-input name="skillTags" [tags]="skill.tags" (tagsChange)="updateField('tags', $event)" />
 
               @if (markdownPreview()) {
                 <div class="rounded-lg border border-border bg-background p-3">
@@ -202,6 +202,13 @@ export class SkillsPageComponent implements OnInit {
 
   startEdit(skill: Skill): void {
     this.editingSkill.set(structuredClone(skill));
+  }
+
+  updateField<K extends keyof Skill>(key: K, value: Skill[K]): void {
+    const skill = this.editingSkill();
+    if (skill) {
+      this.editingSkill.set({ ...skill, [key]: value });
+    }
   }
 
   saveCurrent(): void {

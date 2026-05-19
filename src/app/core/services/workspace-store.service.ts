@@ -49,6 +49,8 @@ export class WorkspaceStore {
   readonly tagFilter = signal('');
   readonly toast = signal('');
 
+  private isRefreshing = false;
+
   readonly activeTitle = computed(() => {
     const titles: Record<string, string> = {
       agents: 'Agents',
@@ -66,68 +68,130 @@ export class WorkspaceStore {
 
   async init(): Promise<void> {
     this.loading.set(true);
-    await this.seed.seedIfEmpty();
-    await this.refresh();
-    this.loading.set(false);
+    try {
+      await this.seed.seedIfEmpty();
+      await this.refresh();
+    } catch (err) {
+      this.handleError(err, 'init');
+    } finally {
+      this.loading.set(false);
+    }
   }
 
   async refresh(): Promise<void> {
-    const [workspace] = await this.workspaceRepo.getAll();
-    const [settings] = await this.settingsRepo.getAll();
+    if (this.isRefreshing) {
+      return;
+    }
+    this.isRefreshing = true;
 
-    this.workspace.set(workspace);
-    this.settings.set(settings);
-    this.roles.set(await this.roleRepo.getAll());
-    this.promptFrameworks.set(await this.frameworkRepo.getAll());
-    this.promptTemplates.set(await this.templateRepo.getAll());
-    this.agents.set(await this.agentRepo.getAll());
-    this.skills.set(await this.skillRepo.getAll());
-    this.promptBlocks.set(await this.blockRepo.getAll());
+    try {
+      const [[workspace], [settings], roles, frameworks, templates, agents, skills, blocks] =
+        await Promise.all([
+          this.workspaceRepo.getAll(),
+          this.settingsRepo.getAll(),
+          this.roleRepo.getAll(),
+          this.frameworkRepo.getAll(),
+          this.templateRepo.getAll(),
+          this.agentRepo.getAll(),
+          this.skillRepo.getAll(),
+          this.blockRepo.getAll(),
+        ]);
+
+      this.workspace.set(workspace);
+      this.settings.set(settings);
+      this.roles.set(roles);
+      this.promptFrameworks.set(frameworks);
+      this.promptTemplates.set(templates);
+      this.agents.set(agents);
+      this.skills.set(skills);
+      this.promptBlocks.set(blocks);
+    } catch (err) {
+      this.handleError(err, 'refresh');
+      throw err;
+    } finally {
+      this.isRefreshing = false;
+    }
   }
 
   async saveRole(role: Role): Promise<void> {
-    await this.roleRepo.update(role);
-    await this.refreshWithToast('Role saved.');
+    try {
+      await this.roleRepo.update(role);
+      await this.refreshWithToast('Role saved.');
+    } catch (err) {
+      this.handleError(err, 'save role');
+    }
   }
 
   async saveFramework(framework: PromptFramework): Promise<void> {
-    await this.frameworkRepo.update(framework);
-    await this.refreshWithToast('Framework saved.');
+    try {
+      await this.frameworkRepo.update(framework);
+      await this.refreshWithToast('Framework saved.');
+    } catch (err) {
+      this.handleError(err, 'save framework');
+    }
   }
 
   async saveTemplate(template: PromptTemplate): Promise<void> {
-    await this.templateRepo.update(template);
-    await this.refreshWithToast('Prompt template saved.');
+    try {
+      await this.templateRepo.update(template);
+      await this.refreshWithToast('Prompt template saved.');
+    } catch (err) {
+      this.handleError(err, 'save template');
+    }
   }
 
   async saveAgent(agent: Agent): Promise<void> {
-    await this.agentRepo.update(agent);
-    await this.refreshWithToast('Agent saved.');
+    try {
+      await this.agentRepo.update(agent);
+      await this.refreshWithToast('Agent saved.');
+    } catch (err) {
+      this.handleError(err, 'save agent');
+    }
   }
 
   async saveSkill(skill: Skill): Promise<void> {
-    await this.skillRepo.update(skill);
-    await this.refreshWithToast('Skill saved.');
+    try {
+      await this.skillRepo.update(skill);
+      await this.refreshWithToast('Skill saved.');
+    } catch (err) {
+      this.handleError(err, 'save skill');
+    }
   }
 
   async saveBlock(block: PromptBlock): Promise<void> {
-    await this.blockRepo.update(block);
-    await this.refreshWithToast('Prompt block saved.');
+    try {
+      await this.blockRepo.update(block);
+      await this.refreshWithToast('Prompt block saved.');
+    } catch (err) {
+      this.handleError(err, 'save block');
+    }
   }
 
   async saveSettings(settings: AppSettings): Promise<void> {
-    await this.settingsRepo.update(settings);
-    await this.refreshWithToast('Settings saved.');
+    try {
+      await this.settingsRepo.update(settings);
+      await this.refreshWithToast('Settings saved.');
+    } catch (err) {
+      this.handleError(err, 'save settings');
+    }
   }
 
   async duplicate(type: EntityType, id: string): Promise<void> {
-    await this.repoFor(type).duplicate(id);
-    await this.refreshWithToast('Duplicated.');
+    try {
+      await this.repoFor(type).duplicate(id);
+      await this.refreshWithToast('Duplicated.');
+    } catch (err) {
+      this.handleError(err, 'duplicate');
+    }
   }
 
   async delete(type: EntityType, id: string): Promise<void> {
-    await this.repoFor(type).delete(id);
-    await this.refreshWithToast('Deleted.');
+    try {
+      await this.repoFor(type).delete(id);
+      await this.refreshWithToast('Deleted.');
+    } catch (err) {
+      this.handleError(err, 'delete');
+    }
   }
 
   filterByQuery<T extends { name: string; description?: string; tags?: string[] }>(items: T[]): T[] {
@@ -174,5 +238,12 @@ export class WorkspaceStore {
     };
 
     return repos[type];
+  }
+
+  private handleError(err: unknown, context: string): void {
+    const message = err instanceof Error ? err.message : String(err);
+    this.loading.set(false);
+    this.notify(`Error: ${context} — ${message}`);
+    console.error(`WorkspaceStore error (${context}):`, err);
   }
 }

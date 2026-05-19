@@ -130,20 +130,20 @@ import { VoltButton, VoltCard, VoltFormField, VoltInput, VoltLabel, VoltTextarea
             <form class="flex flex-col gap-4" (submit)="save(role)">
               <volt-form-field>
                 <volt-label>Name</volt-label>
-                <volt-input name="roleName" [(value)]="role.name" />
+                <volt-input name="roleName" [value]="role.name" (valueChange)="updateField('name', $event)" />
               </volt-form-field>
 
               <volt-form-field>
                 <volt-label>Description</volt-label>
-                <volt-textarea [rows]="3" [(value)]="role.description" />
+                <volt-textarea [rows]="3" [value]="role.description" (valueChange)="updateField('description', $event)" />
               </volt-form-field>
 
               <volt-form-field>
                 <volt-label>Content</volt-label>
-                <volt-textarea [rows]="8" [(value)]="role.content" />
+                <volt-textarea [rows]="8" [value]="role.content" (valueChange)="updateField('content', $event)" />
               </volt-form-field>
 
-              <app-tag-input name="roleTags" [tags]="role.tags" (tagsChange)="role.tags = $event" />
+              <app-tag-input name="roleTags" [tags]="role.tags" (tagsChange)="updateField('tags', $event)" />
 
               @if (markdownPreview()) {
                 <div class="rounded-lg border border-border bg-background p-3">
@@ -185,6 +185,13 @@ export class RolesPageComponent implements OnInit {
 
   startEdit(role: Role): void {
     this.editingRole.set(structuredClone(role));
+  }
+
+  updateField<K extends keyof Role>(key: K, value: Role[K]): void {
+    const role = this.editingRole();
+    if (role) {
+      this.editingRole.set({ ...role, [key]: value });
+    }
   }
 
   saveCurrent(): void {

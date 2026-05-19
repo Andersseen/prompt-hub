@@ -24,7 +24,15 @@ describe('ExportImportService', () => {
     expect(data.promptFrameworks).toHaveLength(2);
   });
 
-  it('validates malformed imports', () => {
-    expect(() => service.parseImport('{ "schemaVersion": "1.0.0" }')).toThrow('workspace.id is required');
+  it('validates malformed imports with Zod', () => {
+    expect(() => service.parseImport('{ "schemaVersion": "1.0.0" }')).toThrow('Import validation failed');
+  });
+
+  it('accepts a valid workspace export', async () => {
+    const json = await service.exportJson();
+    const data = service.parseImport(json);
+
+    expect(data.schemaVersion).toBe('1.0.0');
+    expect(data.roles).toHaveLength(1);
   });
 });

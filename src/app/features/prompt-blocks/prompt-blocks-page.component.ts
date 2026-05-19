@@ -135,17 +135,17 @@ import { TagInputComponent } from '../../shared/components/tag-input.component';
             <form class="flex flex-col gap-4" (submit)="submitBlock($event, block)">
               <volt-form-field>
                 <volt-label>Name</volt-label>
-                <volt-input name="blockName" [(value)]="block.name" />
+                <volt-input name="blockName" [value]="block.name" (valueChange)="updateField('name', $event)" />
               </volt-form-field>
 
               <volt-form-field>
                 <volt-label>Description</volt-label>
-                <volt-textarea [rows]="3" [(value)]="block.description" />
+                <volt-textarea [rows]="3" [value]="block.description" (valueChange)="updateField('description', $event)" />
               </volt-form-field>
 
               <volt-form-field>
                 <volt-label>Content</volt-label>
-                <volt-textarea [rows]="6" [(value)]="block.content" />
+                <volt-textarea [rows]="6" [value]="block.content" (valueChange)="updateField('content', $event)" />
               </volt-form-field>
 
               <volt-form-field>
@@ -154,7 +154,7 @@ import { TagInputComponent } from '../../shared/components/tag-input.component';
                   class="form-control"
                   name="blockCategory"
                   [value]="block.category"
-                  (change)="block.category = readCategoryValue($event)"
+                  (change)="updateField('category', readCategoryValue($event))"
                 >
                   @for (category of blockCategories; track category) {
                     <option [value]="category">{{ category }}</option>
@@ -162,7 +162,7 @@ import { TagInputComponent } from '../../shared/components/tag-input.component';
                 </select>
               </volt-form-field>
 
-              <app-tag-input name="blockTags" [tags]="block.tags" (tagsChange)="block.tags = $event" />
+              <app-tag-input name="blockTags" [tags]="block.tags" (tagsChange)="updateField('tags', $event)" />
             </form>
           } @else {
             <div class="flex flex-col items-center justify-center py-12 text-center">
@@ -199,6 +199,13 @@ export class PromptBlocksPageComponent implements OnInit {
 
   editBlock(block: PromptBlock): void {
     this.editingBlock.set(structuredClone(block));
+  }
+
+  updateField<K extends keyof PromptBlock>(key: K, value: PromptBlock[K]): void {
+    const block = this.editingBlock();
+    if (block) {
+      this.editingBlock.set({ ...block, [key]: value });
+    }
   }
 
   saveCurrent(): void {
