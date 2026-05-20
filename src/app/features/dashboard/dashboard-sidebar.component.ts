@@ -1,7 +1,13 @@
 import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
 import { RouterLink, RouterLinkActive } from '@angular/router';
 
-import { DashboardNavItem, DashboardSectionId } from './dashboard-nav.types';
+import { type AppSectionId } from '../../core/models/navigation';
+
+interface NavItem {
+  id: AppSectionId;
+  label: string;
+  route: string;
+}
 
 @Component({
   selector: 'app-dashboard-sidebar',
@@ -52,7 +58,7 @@ import { DashboardNavItem, DashboardSectionId } from './dashboard-nav.types';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class DashboardSidebarComponent {
-  readonly items = input<DashboardNavItem[]>([]);
-  readonly activeId = input<DashboardSectionId>('agents');
-  readonly sectionSelected = output<DashboardSectionId>();
+  readonly items = input<NavItem[]>([]);
+  readonly activeId = input<AppSectionId>('agents');
+  readonly sectionSelected = output<AppSectionId>();
 }

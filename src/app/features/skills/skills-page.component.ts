@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal, type Signal } from '@angular/core';
 import { MOVEMENT_DIRECTIVES } from 'angular-movement';
 import {
   SplitterContainerDirective,
@@ -7,6 +7,7 @@ import {
 } from 'quartz-headless';
 
 import { Skill } from '../../core/models/entities';
+import { type HasDirtyCheck } from '../../core/guards/dirty-check.guard';
 import { ClipboardService } from '../../core/services/clipboard.service';
 import { MarkdownService } from '../../core/services/markdown.service';
 import { WorkspaceStore } from '../../core/services/workspace-store.service';
@@ -123,19 +124,19 @@ import { VoltButton, VoltCard, VoltFormField, VoltInput, VoltLabel, VoltTextarea
         <div class="editor-panel flex flex-col gap-5">
           <div class="flex items-center justify-between border-b border-border pb-3">
             <h3 class="text-sm font-semibold">Skill Editor</h3>
-            <volt-button variant="solid" size="sm" (click)="saveCurrent()">Save</volt-button>
+            <volt-button variant="solid" size="sm" [disabled]="store.saving()" (click)="saveCurrent()">Save</volt-button>
           </div>
 
           @if (editingSkill(); as skill) {
             <form class="flex flex-col gap-4" (submit)="save(skill)">
               <volt-form-field>
                 <volt-label>Name</volt-label>
-                <volt-input name="skillName" [(value)]="skill.name" />
+                <volt-input name="skillName" [value]="skill.name" (valueChange)="updateField('name', $event)" />
               </volt-form-field>
 
               <volt-form-field>
                 <volt-label>Description</volt-label>
-                <volt-textarea [rows]="3" [(value)]="skill.description" />
+                <volt-textarea [rows]="3" [value]="skill.description" (valueChange)="updateField('description', $event)" />
               </volt-form-field>
 
               <div class="rounded-lg border border-border bg-background p-3">
@@ -143,24 +144,24 @@ import { VoltButton, VoltCard, VoltFormField, VoltInput, VoltLabel, VoltTextarea
                 <div class="flex flex-col gap-3">
                   <volt-form-field>
                     <volt-label>Instructions</volt-label>
-                    <volt-textarea [rows]="4" [(value)]="skill.instructions" />
+                    <volt-textarea [rows]="4" [value]="skill.instructions" (valueChange)="updateField('instructions', $event)" />
                   </volt-form-field>
                   <volt-form-field>
                     <volt-label>Input Format</volt-label>
-                    <volt-textarea [rows]="3" [(value)]="skill.inputFormat" />
+                    <volt-textarea [rows]="3" [value]="skill.inputFormat" (valueChange)="updateField('inputFormat', $event)" />
                   </volt-form-field>
                   <volt-form-field>
                     <volt-label>Output Format</volt-label>
-                    <volt-textarea [rows]="3" [(value)]="skill.outputFormat" />
+                    <volt-textarea [rows]="3" [value]="skill.outputFormat" (valueChange)="updateField('outputFormat', $event)" />
                   </volt-form-field>
                   <volt-form-field>
                     <volt-label>Constraints</volt-label>
-                    <volt-textarea [rows]="3" [(value)]="skill.constraints" />
+                    <volt-textarea [rows]="3" [value]="skill.constraints" (valueChange)="updateField('constraints', $event)" />
                   </volt-form-field>
                 </div>
               </div>
 
-              <app-tag-input name="skillTags" [tags]="skill.tags" (tagsChange)="skill.tags = $event" />
+              <app-tag-input name="skillTags" [tags]="skill.tags" (tagsChange)="updateField('tags', $event)" />
 
               @if (markdownPreview()) {
                 <div class="rounded-lg border border-border bg-background p-3">
@@ -183,7 +184,7 @@ import { VoltButton, VoltCard, VoltFormField, VoltInput, VoltLabel, VoltTextarea
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class SkillsPageComponent implements OnInit {
+export class SkillsPageComponent implements OnInit, HasDirtyCheck {
   readonly store = inject(WorkspaceStore);
   private readonly markdown = inject(MarkdownService);
   private readonly clipboard = inject(ClipboardService);
@@ -195,6 +196,14 @@ export class SkillsPageComponent implements OnInit {
     return skill ? this.markdown.skill(skill) : '';
   });
 
+  readonly isDirty: Signal<boolean> = computed(() => {
+    const draft = this.editingSkill();
+    if (!draft) return false;
+    const original = this.store.skills().find((s) => s.id === draft.id);
+    if (!original) return true;
+    return JSON.stringify(draft) !== JSON.stringify(original);
+  });
+
   ngOnInit(): void {
     const first = this.store.skills()[0];
     this.editingSkill.set(first ? structuredClone(first) : this.newSkill());
@@ -202,6 +211,13 @@ export class SkillsPageComponent implements OnInit {
 
   startEdit(skill: Skill): void {
     this.editingSkill.set(structuredClone(skill));
+  }
+
+  updateField<K extends keyof Skill>(key: K, value: Skill[K]): void {
+    const skill = this.editingSkill();
+    if (skill) {
+      this.editingSkill.set({ ...skill, [key]: value });
+    }
   }
 
   saveCurrent(): void {

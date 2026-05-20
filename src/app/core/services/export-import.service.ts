@@ -1,17 +1,18 @@
 import { Injectable, inject } from '@angular/core';
 import { parse, stringify } from 'yaml';
 
-import { appDatabase } from '../db/app-database';
-import { WorkspaceExport } from '../models/entities';
+import { AppDatabase } from '../db/app-database';
+import { WorkspaceExportSchema, type WorkspaceExportValidated } from '../models/entity-schemas';
 import { MarkdownService } from './markdown.service';
 
 @Injectable({ providedIn: 'root' })
 export class ExportImportService {
+  private readonly db = inject(AppDatabase);
   private readonly markdown = inject(MarkdownService);
 
-  async collectWorkspace(): Promise<WorkspaceExport> {
-    const [workspace] = await appDatabase.workspaces.toArray();
-    const [settings] = await appDatabase.settings.toArray();
+  async collectWorkspace(): Promise<WorkspaceExportValidated> {
+    const [workspace] = await this.db.workspaces.toArray();
+    const [settings] = await this.db.settings.toArray();
 
     if (!workspace || !settings) {
       throw new Error('Workspace is not initialized.');
@@ -21,12 +22,12 @@ export class ExportImportService {
       schemaVersion: workspace.schemaVersion,
       exportedAt: new Date().toISOString(),
       workspace,
-      roles: await appDatabase.roles.toArray(),
-      promptFrameworks: await appDatabase.promptFrameworks.toArray(),
-      promptTemplates: await appDatabase.promptTemplates.toArray(),
-      agents: await appDatabase.agents.toArray(),
-      skills: await appDatabase.skills.toArray(),
-      promptBlocks: await appDatabase.promptBlocks.toArray(),
+      roles: await this.db.roles.toArray(),
+      promptFrameworks: await this.db.promptFrameworks.toArray(),
+      promptTemplates: await this.db.promptTemplates.toArray(),
+      agents: await this.db.agents.toArray(),
+      skills: await this.db.skills.toArray(),
+      promptBlocks: await this.db.promptBlocks.toArray(),
       settings,
     };
   }
@@ -43,93 +44,65 @@ export class ExportImportService {
     return this.markdown.workspace(await this.collectWorkspace());
   }
 
-  parseImport(value: string): WorkspaceExport {
+  parseImport(value: string): WorkspaceExportValidated {
     const trimmed = value.trim();
-    const parsed = trimmed.startsWith('{') ? JSON.parse(trimmed) : parse(trimmed);
-    this.validateWorkspaceExport(parsed);
-    return parsed;
+
+    let parsed: unknown;
+    if (trimmed.startsWith('{')) {
+      try {
+        parsed = JSON.parse(trimmed);
+      } catch {
+        throw new Error('Invalid JSON format.');
+      }
+    } else {
+      try {
+        parsed = parse(trimmed);
+      } catch {
+        throw new Error('Invalid YAML format.');
+      }
+    }
+
+    const result = WorkspaceExportSchema.safeParse(parsed);
+    if (!result.success) {
+      const issues = result.error.issues.map((i) => `${i.path.join('.')}: ${i.message}`).slice(0, 3);
+      throw new Error(`Import validation failed: ${issues.join('; ')}`);
+    }
+
+    return result.data;
   }
 
-  async replaceWorkspace(data: WorkspaceExport): Promise<void> {
-    this.validateWorkspaceExport(data);
-
-    await appDatabase.transaction(
+  async replaceWorkspace(data: WorkspaceExportValidated): Promise<void> {
+    await this.db.transaction(
       'rw',
       [
-        appDatabase.workspaces,
-        appDatabase.roles,
-        appDatabase.promptFrameworks,
-        appDatabase.promptTemplates,
-        appDatabase.agents,
-        appDatabase.skills,
-        appDatabase.promptBlocks,
-        appDatabase.settings,
+        this.db.workspaces,
+        this.db.roles,
+        this.db.promptFrameworks,
+        this.db.promptTemplates,
+        this.db.agents,
+        this.db.skills,
+        this.db.promptBlocks,
+        this.db.settings,
       ],
       async () => {
-        await appDatabase.workspaces.clear();
-        await appDatabase.roles.clear();
-        await appDatabase.promptFrameworks.clear();
-        await appDatabase.promptTemplates.clear();
-        await appDatabase.agents.clear();
-        await appDatabase.skills.clear();
-        await appDatabase.promptBlocks.clear();
-        await appDatabase.settings.clear();
+        await this.db.workspaces.clear();
+        await this.db.roles.clear();
+        await this.db.promptFrameworks.clear();
+        await this.db.promptTemplates.clear();
+        await this.db.agents.clear();
+        await this.db.skills.clear();
+        await this.db.promptBlocks.clear();
+        await this.db.settings.clear();
 
-        await appDatabase.workspaces.add(data.workspace);
-        await appDatabase.roles.bulkAdd(data.roles);
-        await appDatabase.promptFrameworks.bulkAdd(data.promptFrameworks);
-        await appDatabase.promptTemplates.bulkAdd(data.promptTemplates);
-        await appDatabase.agents.bulkAdd(data.agents);
-        await appDatabase.skills.bulkAdd(data.skills);
-        await appDatabase.promptBlocks.bulkAdd(data.promptBlocks);
-        await appDatabase.settings.add(data.settings);
+        await this.db.workspaces.add(data.workspace);
+        await this.db.roles.bulkAdd(data.roles);
+        await this.db.promptFrameworks.bulkAdd(data.promptFrameworks);
+        await this.db.promptTemplates.bulkAdd(data.promptTemplates);
+        await this.db.agents.bulkAdd(data.agents);
+        await this.db.skills.bulkAdd(data.skills);
+        await this.db.promptBlocks.bulkAdd(data.promptBlocks);
+        await this.db.settings.add(data.settings);
       }
     );
-  }
-
-  private validateWorkspaceExport(value: unknown): asserts value is WorkspaceExport {
-    if (!value || typeof value !== 'object') {
-      throw new Error('Import must be a JSON or YAML object.');
-    }
-
-    const data = value as Partial<WorkspaceExport>;
-    const arrayKeys: (keyof WorkspaceExport)[] = [
-      'roles',
-      'promptFrameworks',
-      'promptTemplates',
-      'agents',
-      'skills',
-      'promptBlocks',
-    ];
-
-    if (!data.schemaVersion) {
-      throw new Error('schemaVersion is required.');
-    }
-
-    if (!data.workspace?.id) {
-      throw new Error('workspace.id is required.');
-    }
-
-    for (const key of arrayKeys) {
-      if (!Array.isArray(data[key])) {
-        throw new Error(`${key} must be an array.`);
-      }
-
-      for (const entity of data[key] as { id?: string; name?: string }[]) {
-        if (!entity.id) {
-          throw new Error(`${key} contains an entity without id.`);
-        }
-
-        if (!entity.name) {
-          throw new Error(`${key} contains an entity without name.`);
-        }
-      }
-    }
-
-    if (!data.settings?.id) {
-      throw new Error('settings.id is required.');
-    }
-
-    // TODO: add merge import strategy after replace is stable.
   }
 }

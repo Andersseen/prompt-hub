@@ -1,6 +1,6 @@
 import { Injectable } from '@angular/core';
 
-import { appDatabase } from '../db/app-database';
+import { AppDatabase } from '../db/app-database';
 import {
   Agent,
   AppSettings,
@@ -15,56 +15,56 @@ import { DexieRepository } from './local-repository';
 
 @Injectable({ providedIn: 'root' })
 export class WorkspaceRepository extends DexieRepository<Workspace> {
-  constructor() {
-    super(appDatabase.workspaces);
+  constructor(db: AppDatabase) {
+    super(db.workspaces);
   }
 }
 
 @Injectable({ providedIn: 'root' })
 export class RoleRepository extends DexieRepository<Role> {
-  constructor() {
-    super(appDatabase.roles);
+  constructor(db: AppDatabase) {
+    super(db.roles);
   }
 }
 
 @Injectable({ providedIn: 'root' })
 export class PromptFrameworkRepository extends DexieRepository<PromptFramework> {
-  constructor() {
-    super(appDatabase.promptFrameworks);
+  constructor(db: AppDatabase) {
+    super(db.promptFrameworks);
   }
 }
 
 @Injectable({ providedIn: 'root' })
 export class PromptTemplateRepository extends DexieRepository<PromptTemplate> {
-  constructor() {
-    super(appDatabase.promptTemplates);
+  constructor(db: AppDatabase) {
+    super(db.promptTemplates);
   }
 }
 
 @Injectable({ providedIn: 'root' })
 export class AgentRepository extends DexieRepository<Agent> {
-  constructor() {
-    super(appDatabase.agents);
+  constructor(db: AppDatabase) {
+    super(db.agents);
   }
 }
 
 @Injectable({ providedIn: 'root' })
 export class SkillRepository extends DexieRepository<Skill> {
-  constructor() {
-    super(appDatabase.skills);
+  constructor(db: AppDatabase) {
+    super(db.skills);
   }
 }
 
 @Injectable({ providedIn: 'root' })
 export class PromptBlockRepository extends DexieRepository<PromptBlock> {
-  constructor() {
-    super(appDatabase.promptBlocks);
+  constructor(db: AppDatabase) {
+    super(db.promptBlocks);
   }
 }
 
 @Injectable({ providedIn: 'root' })
 export class SettingsRepository extends DexieRepository<AppSettings> {
-  constructor() {
-    super(appDatabase.settings);
+  constructor(db: AppDatabase) {
+    super(db.settings);
   }
 }

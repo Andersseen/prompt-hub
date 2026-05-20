@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal, type Signal } from '@angular/core';
 import { MOVEMENT_DIRECTIVES } from 'angular-movement';
 import {
   SplitterContainerDirective,
@@ -7,6 +7,7 @@ import {
 } from 'quartz-headless';
 
 import { Role } from '../../core/models/entities';
+import { type HasDirtyCheck } from '../../core/guards/dirty-check.guard';
 import { ClipboardService } from '../../core/services/clipboard.service';
 import { MarkdownService } from '../../core/services/markdown.service';
 import { WorkspaceStore } from '../../core/services/workspace-store.service';
@@ -123,27 +124,27 @@ import { VoltButton, VoltCard, VoltFormField, VoltInput, VoltLabel, VoltTextarea
         <div class="editor-panel flex flex-col gap-5">
           <div class="flex items-center justify-between border-b border-border pb-3">
             <h3 class="text-sm font-semibold">Role Editor</h3>
-            <volt-button variant="solid" size="sm" (click)="saveCurrent()">Save</volt-button>
+            <volt-button variant="solid" size="sm" [disabled]="store.saving()" (click)="saveCurrent()">Save</volt-button>
           </div>
 
           @if (editingRole(); as role) {
             <form class="flex flex-col gap-4" (submit)="save(role)">
               <volt-form-field>
                 <volt-label>Name</volt-label>
-                <volt-input name="roleName" [(value)]="role.name" />
+                <volt-input name="roleName" [value]="role.name" (valueChange)="updateField('name', $event)" />
               </volt-form-field>
 
               <volt-form-field>
                 <volt-label>Description</volt-label>
-                <volt-textarea [rows]="3" [(value)]="role.description" />
+                <volt-textarea [rows]="3" [value]="role.description" (valueChange)="updateField('description', $event)" />
               </volt-form-field>
 
               <volt-form-field>
                 <volt-label>Content</volt-label>
-                <volt-textarea [rows]="8" [(value)]="role.content" />
+                <volt-textarea [rows]="8" [value]="role.content" (valueChange)="updateField('content', $event)" />
               </volt-form-field>
 
-              <app-tag-input name="roleTags" [tags]="role.tags" (tagsChange)="role.tags = $event" />
+              <app-tag-input name="roleTags" [tags]="role.tags" (tagsChange)="updateField('tags', $event)" />
 
               @if (markdownPreview()) {
                 <div class="rounded-lg border border-border bg-background p-3">
@@ -166,7 +167,7 @@ import { VoltButton, VoltCard, VoltFormField, VoltInput, VoltLabel, VoltTextarea
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class RolesPageComponent implements OnInit {
+export class RolesPageComponent implements OnInit, HasDirtyCheck {
   readonly store = inject(WorkspaceStore);
   private readonly markdown = inject(MarkdownService);
   private readonly clipboard = inject(ClipboardService);
@@ -178,6 +179,14 @@ export class RolesPageComponent implements OnInit {
     return role ? this.markdown.role(role) : '';
   });
 
+  readonly isDirty: Signal<boolean> = computed(() => {
+    const draft = this.editingRole();
+    if (!draft) return false;
+    const original = this.store.roles().find((r) => r.id === draft.id);
+    if (!original) return true;
+    return JSON.stringify(draft) !== JSON.stringify(original);
+  });
+
   ngOnInit(): void {
     const first = this.store.roles()[0];
     this.editingRole.set(first ? structuredClone(first) : this.newRole());
@@ -185,6 +194,13 @@ export class RolesPageComponent implements OnInit {
 
   startEdit(role: Role): void {
     this.editingRole.set(structuredClone(role));
+  }
+
+  updateField<K extends keyof Role>(key: K, value: Role[K]): void {
+    const role = this.editingRole();
+    if (role) {
+      this.editingRole.set({ ...role, [key]: value });
+    }
   }
 
   saveCurrent(): void {

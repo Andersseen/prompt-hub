@@ -1,17 +1,19 @@
 import { TestBed } from '@angular/core/testing';
 import { beforeEach, describe, expect, it } from 'vitest';
 
-import { appDatabase } from '../db/app-database';
+import { AppDatabase } from '../db/app-database';
 import { ExportImportService } from './export-import.service';
 import { SeedService } from './seed.service';
 
 describe('ExportImportService', () => {
   let service: ExportImportService;
+  let db: AppDatabase;
 
   beforeEach(async () => {
-    await appDatabase.delete();
-    await appDatabase.open();
-    await new SeedService().seedIfEmpty();
+    db = TestBed.inject(AppDatabase);
+    await db.delete();
+    await db.open();
+    await TestBed.inject(SeedService).seedIfEmpty();
     service = TestBed.inject(ExportImportService);
   });
 
@@ -24,7 +26,15 @@ describe('ExportImportService', () => {
     expect(data.promptFrameworks).toHaveLength(2);
   });
 
-  it('validates malformed imports', () => {
-    expect(() => service.parseImport('{ "schemaVersion": "1.0.0" }')).toThrow('workspace.id is required');
+  it('validates malformed imports with Zod', () => {
+    expect(() => service.parseImport('{ "schemaVersion": "1.0.0" }')).toThrow('Import validation failed');
+  });
+
+  it('accepts a valid workspace export', async () => {
+    const json = await service.exportJson();
+    const data = service.parseImport(json);
+
+    expect(data.schemaVersion).toBe('1.0.0');
+    expect(data.roles).toHaveLength(1);
   });
 });

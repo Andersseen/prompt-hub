@@ -82,7 +82,7 @@ import { WorkspaceStore } from '../../core/services/workspace-store.service';
               </label>
             </div>
 
-            <volt-button variant="solid" size="sm" type="submit">Save Settings</volt-button>
+            <volt-button variant="solid" size="sm" type="submit" [disabled]="store.saving()">Save Settings</volt-button>
           </form>
         }
       </div>
@@ -91,7 +91,7 @@ import { WorkspaceStore } from '../../core/services/workspace-store.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsPageComponent implements OnInit {
-  private readonly store = inject(WorkspaceStore);
+  readonly store = inject(WorkspaceStore);
   readonly themeService = inject(ThemeService);
   readonly settings = computed(() => this.store.settings());
   readonly themeLabel = computed(() => {

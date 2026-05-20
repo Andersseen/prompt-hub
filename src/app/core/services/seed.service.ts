@@ -1,6 +1,6 @@
-import { Injectable } from '@angular/core';
+import { Injectable, inject } from '@angular/core';
 
-import { appDatabase } from '../db/app-database';
+import { AppDatabase } from '../db/app-database';
 import {
   Agent,
   AppSettings,
@@ -35,8 +35,10 @@ function section(
 
 @Injectable({ providedIn: 'root' })
 export class SeedService {
+  private readonly db = inject(AppDatabase);
+
   async seedIfEmpty(): Promise<void> {
-    const workspaceCount = await appDatabase.workspaces.count();
+    const workspaceCount = await this.db.workspaces.count();
 
     if (workspaceCount > 0) {
       return;
@@ -148,27 +150,27 @@ export class SeedService {
       autosave: true,
     });
 
-    await appDatabase.transaction(
+    await this.db.transaction(
       'rw',
       [
-        appDatabase.workspaces,
-        appDatabase.roles,
-        appDatabase.promptFrameworks,
-        appDatabase.promptTemplates,
-        appDatabase.agents,
-        appDatabase.skills,
-        appDatabase.promptBlocks,
-        appDatabase.settings,
+        this.db.workspaces,
+        this.db.roles,
+        this.db.promptFrameworks,
+        this.db.promptTemplates,
+        this.db.agents,
+        this.db.skills,
+        this.db.promptBlocks,
+        this.db.settings,
       ],
       async () => {
-        await appDatabase.workspaces.add(workspace);
-        await appDatabase.roles.add(role);
-        await appDatabase.promptFrameworks.bulkAdd([fiveLayer, developerTask]);
-        await appDatabase.promptTemplates.add(template);
-        await appDatabase.agents.add(agent);
-        await appDatabase.skills.add(skill);
-        await appDatabase.promptBlocks.bulkAdd(blocks);
-        await appDatabase.settings.add(settings);
+        await this.db.workspaces.add(workspace);
+        await this.db.roles.add(role);
+        await this.db.promptFrameworks.bulkAdd([fiveLayer, developerTask]);
+        await this.db.promptTemplates.add(template);
+        await this.db.agents.add(agent);
+        await this.db.skills.add(skill);
+        await this.db.promptBlocks.bulkAdd(blocks);
+        await this.db.settings.add(settings);
       }
     );
   }

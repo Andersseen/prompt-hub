@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal, type Signal } from '@angular/core';
 import { MOVEMENT_DIRECTIVES } from 'angular-movement';
 import {
   SplitterContainerDirective,
@@ -8,6 +8,7 @@ import {
 
 import { VoltBadge, VoltButton, VoltCard, VoltFormField, VoltInput, VoltLabel, VoltTextarea } from '@voltui/components';
 import { EntityType, PromptBlock, PromptBlockCategory } from '../../core/models/entities';
+import { type HasDirtyCheck } from '../../core/guards/dirty-check.guard';
 import { ClipboardService } from '../../core/services/clipboard.service';
 import { WorkspaceStore } from '../../core/services/workspace-store.service';
 import { withTimestamps } from '../../core/utils/entity-utils';
@@ -128,24 +129,24 @@ import { TagInputComponent } from '../../shared/components/tag-input.component';
         <div class="editor-panel flex flex-col gap-5">
           <div class="flex items-center justify-between border-b border-border pb-3">
             <h3 class="text-sm font-semibold">Block Editor</h3>
-            <volt-button variant="solid" size="sm" (click)="saveCurrent()">Save</volt-button>
+            <volt-button variant="solid" size="sm" [disabled]="store.saving()" (click)="saveCurrent()">Save</volt-button>
           </div>
 
           @if (editingBlock(); as block) {
             <form class="flex flex-col gap-4" (submit)="submitBlock($event, block)">
               <volt-form-field>
                 <volt-label>Name</volt-label>
-                <volt-input name="blockName" [(value)]="block.name" />
+                <volt-input name="blockName" [value]="block.name" (valueChange)="updateField('name', $event)" />
               </volt-form-field>
 
               <volt-form-field>
                 <volt-label>Description</volt-label>
-                <volt-textarea [rows]="3" [(value)]="block.description" />
+                <volt-textarea [rows]="3" [value]="block.description" (valueChange)="updateField('description', $event)" />
               </volt-form-field>
 
               <volt-form-field>
                 <volt-label>Content</volt-label>
-                <volt-textarea [rows]="6" [(value)]="block.content" />
+                <volt-textarea [rows]="6" [value]="block.content" (valueChange)="updateField('content', $event)" />
               </volt-form-field>
 
               <volt-form-field>
@@ -154,7 +155,7 @@ import { TagInputComponent } from '../../shared/components/tag-input.component';
                   class="form-control"
                   name="blockCategory"
                   [value]="block.category"
-                  (change)="block.category = readCategoryValue($event)"
+                  (change)="updateField('category', readCategoryValue($event))"
                 >
                   @for (category of blockCategories; track category) {
                     <option [value]="category">{{ category }}</option>
@@ -162,7 +163,7 @@ import { TagInputComponent } from '../../shared/components/tag-input.component';
                 </select>
               </volt-form-field>
 
-              <app-tag-input name="blockTags" [tags]="block.tags" (tagsChange)="block.tags = $event" />
+              <app-tag-input name="blockTags" [tags]="block.tags" (tagsChange)="updateField('tags', $event)" />
             </form>
           } @else {
             <div class="flex flex-col items-center justify-center py-12 text-center">
@@ -178,7 +179,7 @@ import { TagInputComponent } from '../../shared/components/tag-input.component';
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class PromptBlocksPageComponent implements OnInit {
+export class PromptBlocksPageComponent implements OnInit, HasDirtyCheck {
   private readonly clipboard = inject(ClipboardService);
   readonly store = inject(WorkspaceStore);
   readonly editingBlock = signal<PromptBlock | undefined>(undefined);
@@ -193,12 +194,27 @@ export class PromptBlocksPageComponent implements OnInit {
     'reasoning-rule',
   ];
 
+  readonly isDirty: Signal<boolean> = computed(() => {
+    const draft = this.editingBlock();
+    if (!draft) return false;
+    const original = this.store.promptBlocks().find((b) => b.id === draft.id);
+    if (!original) return true;
+    return JSON.stringify(draft) !== JSON.stringify(original);
+  });
+
   ngOnInit(): void {
     this.editingBlock.set(this.store.promptBlocks()[0] ? structuredClone(this.store.promptBlocks()[0]) : this.newBlock());
   }
 
   editBlock(block: PromptBlock): void {
     this.editingBlock.set(structuredClone(block));
+  }
+
+  updateField<K extends keyof PromptBlock>(key: K, value: PromptBlock[K]): void {
+    const block = this.editingBlock();
+    if (block) {
+      this.editingBlock.set({ ...block, [key]: value });
+    }
   }
 
   saveCurrent(): void {

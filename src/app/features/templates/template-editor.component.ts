@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, input, output, signal, untracked } from '@angular/core';
 import { VoltBadge, VoltButton, VoltCard, VoltFormField, VoltInput, VoltLabel, VoltTextarea } from '@voltui/components';
 
 import { PromptFramework, PromptFrameworkSection, PromptTemplate, Role } from '../../core/models/entities';
@@ -23,23 +23,23 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
       <div class="flex items-center justify-between border-b border-border pb-3">
         <h3 class="text-sm font-semibold">Template Editor</h3>
         <div class="flex gap-2">
-          <volt-button variant="solid" size="sm" (click)="saveCurrent()">Save</volt-button>
+          <volt-button variant="solid" size="sm" [disabled]="saving()" (click)="saveCurrent()">Save</volt-button>
           <volt-button variant="outline" size="sm" (click)="copyOutput.emit()">Copy</volt-button>
         </div>
       </div>
 
-      @if (template(); as t) {
-        <form class="flex flex-col gap-4" (submit)="submit($event, t)">
+      @if (draft(); as t) {
+        <form class="flex flex-col gap-4" (submit)="submit($event)">
           <!-- Basic Info -->
           <div class="space-y-3">
             <volt-form-field>
               <volt-label>Name</volt-label>
-              <volt-input name="templateName" [(value)]="t.name" />
+              <volt-input name="templateName" [value]="t.name" (valueChange)="updateField('name', $event)" />
             </volt-form-field>
 
             <volt-form-field>
               <volt-label>Description</volt-label>
-              <volt-textarea [rows]="3" [(value)]="t.description" />
+              <volt-textarea [rows]="3" [value]="t.description" (valueChange)="updateField('description', $event)" />
             </volt-form-field>
           </div>
 
@@ -54,7 +54,7 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
                     class="form-control"
                     name="templateFramework"
                     [value]="t.frameworkId"
-                    (change)="updateFramework($event, t)"
+                    (change)="updateFramework($event)"
                   >
                     @for (framework of frameworks(); track framework.id) {
                       <option [value]="framework.id">{{ framework.name }}</option>
@@ -68,7 +68,7 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
                     class="form-control"
                     name="templateRole"
                     [value]="t.roleId"
-                    (change)="updateRoleId($event, t)"
+                    (change)="updateRoleId($event)"
                   >
                     <option value="">No role</option>
                     @for (role of roles(); track role.id) {
@@ -95,7 +95,7 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
                       name="value-{{ section.key }}"
                       [placeholder]="section.placeholder || 'Enter ' + section.label + '...'"
                       [value]="t.values[section.key] ?? ''"
-                      (input)="updateSectionValue($event, t, section.key)"
+                      (input)="updateSectionValue(section.key, readTextAreaValue($event))"
                     ></textarea>
                   </volt-form-field>
                 }
@@ -104,7 +104,7 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
           }
 
           <!-- Tags -->
-          <app-tag-input name="templateTags" [tags]="t.tags" (tagsChange)="t.tags = $event" />
+          <app-tag-input name="templateTags" [tags]="t.tags" (tagsChange)="updateField('tags', $event)" />
 
           <!-- Output -->
           <div class="rounded-lg border border-border bg-background p-3">
@@ -144,36 +144,66 @@ export class TemplateEditorComponent {
   readonly sections = input<PromptFrameworkSection[]>([]);
   readonly outputMode = input<OutputMode>('markdown');
   readonly preview = input('');
+  readonly saving = input(false);
 
   readonly save = output<PromptTemplate>();
   readonly copyOutput = output<void>();
   readonly outputModeChange = output<OutputMode>();
   readonly frameworkChange = output<string>();
+  readonly dirtyChange = output<boolean>();
+
+  readonly draft = signal<PromptTemplate | undefined>(undefined);
+
+  constructor() {
+    effect(() => {
+      const t = this.template();
+      untracked(() => this.draft.set(t ? structuredClone(t) : undefined));
+    });
+
+    effect(() => {
+      const d = this.draft();
+      const t = untracked(this.template);
+      const dirty = d && t ? JSON.stringify(d) !== JSON.stringify(t) : false;
+      untracked(() => this.dirtyChange.emit(dirty));
+    });
+  }
 
   saveCurrent(): void {
-    const t = this.template();
+    const t = this.draft();
     if (t) {
       this.save.emit(t);
     }
   }
 
-  submit(event: Event, template: PromptTemplate): void {
+  submit(event: Event): void {
     event.preventDefault();
-    this.save.emit(template);
+    this.saveCurrent();
   }
 
-  updateFramework(event: Event, template: PromptTemplate): void {
+  updateField<K extends keyof PromptTemplate>(key: K, value: PromptTemplate[K]): void {
+    const d = this.draft();
+    if (d) {
+      this.draft.set({ ...d, [key]: value });
+    }
+  }
+
+  updateFramework(event: Event): void {
+    const d = this.draft();
+    if (!d) return;
     const value = this.readSelectValue(event);
-    template.frameworkId = value;
+    this.draft.set({ ...d, frameworkId: value });
     this.frameworkChange.emit(value);
   }
 
-  updateRoleId(event: Event, template: PromptTemplate): void {
-    template.roleId = this.readSelectValue(event);
+  updateRoleId(event: Event): void {
+    this.updateField('roleId', this.readSelectValue(event));
   }
 
-  updateSectionValue(event: Event, template: PromptTemplate, key: string): void {
-    template.values[key] = this.readTextAreaValue(event);
+  updateSectionValue(key: string, value: string): void {
+    const d = this.draft();
+    if (d) {
+      this.draft.set({ ...d, values: { ...d.values, [key]: value } });
+    }
   }
 
   readSelectValue(event: Event): string {

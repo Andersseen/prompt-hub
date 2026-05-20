@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, input, output } from '@angular/core';
+import { ChangeDetectionStrategy, Component, effect, input, output, signal, untracked } from '@angular/core';
 import { VoltBadge, VoltButton, VoltCard, VoltFormField, VoltInput, VoltLabel, VoltTextarea } from '@voltui/components';
 
 import { Agent, PromptTemplate, Role, Skill } from '../../core/models/entities';
@@ -22,23 +22,23 @@ import { TagInputComponent } from '../../shared/components/tag-input.component';
       <div class="flex items-center justify-between border-b border-border pb-3">
         <h3 class="text-sm font-semibold">Agent Editor</h3>
         <div class="flex gap-2">
-          <volt-button variant="solid" size="sm" type="submit" (click)="saveCurrent()">Save</volt-button>
+          <volt-button variant="solid" size="sm" type="submit" [disabled]="saving()" (click)="saveCurrent()">Save</volt-button>
           <volt-button variant="outline" size="sm" (click)="copyMarkdown.emit()">Copy</volt-button>
         </div>
       </div>
 
-      @if (agent(); as a) {
-        <form class="flex flex-col gap-4" (submit)="submit($event, a)">
+      @if (draft(); as a) {
+        <form class="flex flex-col gap-4" (submit)="submit($event)">
           <!-- Basic Info -->
           <div class="space-y-3">
             <volt-form-field>
               <volt-label>Name</volt-label>
-              <volt-input name="agentName" [(value)]="a.name" />
+              <volt-input name="agentName" [value]="a.name" (valueChange)="updateField('name', $event)" />
             </volt-form-field>
 
             <volt-form-field>
               <volt-label>Description</volt-label>
-              <volt-textarea [rows]="3" [(value)]="a.description" />
+              <volt-textarea [rows]="3" [value]="a.description" (valueChange)="updateField('description', $event)" />
             </volt-form-field>
           </div>
 
@@ -48,7 +48,7 @@ import { TagInputComponent } from '../../shared/components/tag-input.component';
             <div class="space-y-3">
               <volt-form-field>
                 <volt-label>Role</volt-label>
-                <select class="form-control" name="agentRole" [value]="a.roleId" (change)="updateRoleId($event, a)">
+                <select class="form-control" name="agentRole" [value]="a.roleId" (change)="updateRoleId($event)">
                   <option value="">No role assigned</option>
                   @for (role of roles(); track role.id) {
                     <option [value]="role.id">{{ role.name }}</option>
@@ -59,7 +59,7 @@ import { TagInputComponent } from '../../shared/components/tag-input.component';
               <div class="grid gap-3 sm:grid-cols-2">
                 <volt-form-field>
                   <volt-label>Skills ({{ a.skillIds.length }})</volt-label>
-                  <select class="form-control min-h-[120px]" multiple name="agentSkills" (change)="updateSkillIds($event, a)">
+                  <select class="form-control min-h-[120px]" multiple name="agentSkills" (change)="updateSkillIds($event)">
                     @for (skill of skills(); track skill.id) {
                       <option [value]="skill.id" [selected]="a.skillIds.includes(skill.id)">{{ skill.name }}</option>
                     }
@@ -69,7 +69,7 @@ import { TagInputComponent } from '../../shared/components/tag-input.component';
 
                 <volt-form-field>
                   <volt-label>Prompts ({{ a.promptTemplateIds.length }})</volt-label>
-                  <select class="form-control min-h-[120px]" multiple name="agentTemplates" (change)="updateTemplateIds($event, a)">
+                  <select class="form-control min-h-[120px]" multiple name="agentTemplates" (change)="updateTemplateIds($event)">
                     @for (template of templates(); track template.id) {
                       <option [value]="template.id" [selected]="a.promptTemplateIds.includes(template.id)">{{ template.name }}</option>
                     }
@@ -86,18 +86,18 @@ import { TagInputComponent } from '../../shared/components/tag-input.component';
             <div class="space-y-3">
               <volt-form-field>
                 <volt-label>Default Constraints</volt-label>
-                <volt-textarea [rows]="3" [(value)]="a.defaultConstraints" />
+                <volt-textarea [rows]="3" [value]="a.defaultConstraints" (valueChange)="updateField('defaultConstraints', $event)" />
               </volt-form-field>
 
               <volt-form-field>
                 <volt-label>Output Format</volt-label>
-                <volt-textarea [rows]="3" [(value)]="a.defaultOutputFormat" />
+                <volt-textarea [rows]="3" [value]="a.defaultOutputFormat" (valueChange)="updateField('defaultOutputFormat', $event)" />
               </volt-form-field>
             </div>
           </div>
 
           <!-- Tags -->
-          <app-tag-input name="agentTags" [tags]="a.tags" (tagsChange)="a.tags = $event" />
+          <app-tag-input name="agentTags" [tags]="a.tags" (tagsChange)="updateField('tags', $event)" />
 
           <!-- Preview -->
           @if (markdownPreview()) {
@@ -126,32 +126,57 @@ export class AgentEditorComponent {
   readonly skills = input<Skill[]>([]);
   readonly templates = input<PromptTemplate[]>([]);
   readonly markdownPreview = input('');
+  readonly saving = input(false);
 
   readonly save = output<Agent>();
   readonly copyMarkdown = output<void>();
+  readonly dirtyChange = output<boolean>();
+
+  readonly draft = signal<Agent | undefined>(undefined);
+
+  constructor() {
+    effect(() => {
+      const a = this.agent();
+      untracked(() => this.draft.set(a ? structuredClone(a) : undefined));
+    });
+
+    effect(() => {
+      const d = this.draft();
+      const a = untracked(this.agent);
+      const dirty = d && a ? JSON.stringify(d) !== JSON.stringify(a) : false;
+      untracked(() => this.dirtyChange.emit(dirty));
+    });
+  }
 
   saveCurrent(): void {
-    const a = this.agent();
+    const a = this.draft();
     if (a) {
       this.save.emit(a);
     }
   }
 
-  submit(event: Event, agent: Agent): void {
+  submit(event: Event): void {
     event.preventDefault();
-    this.save.emit(agent);
+    this.saveCurrent();
   }
 
-  updateRoleId(event: Event, agent: Agent): void {
-    agent.roleId = this.readSelectValue(event);
+  updateField<K extends keyof Agent>(key: K, value: Agent[K]): void {
+    const d = this.draft();
+    if (d) {
+      this.draft.set({ ...d, [key]: value });
+    }
   }
 
-  updateSkillIds(event: Event, agent: Agent): void {
-    agent.skillIds = this.readSelectedValues(event);
+  updateRoleId(event: Event): void {
+    this.updateField('roleId', this.readSelectValue(event));
   }
 
-  updateTemplateIds(event: Event, agent: Agent): void {
-    agent.promptTemplateIds = this.readSelectedValues(event);
+  updateSkillIds(event: Event): void {
+    this.updateField('skillIds', this.readSelectedValues(event));
+  }
+
+  updateTemplateIds(event: Event): void {
+    this.updateField('promptTemplateIds', this.readSelectedValues(event));
   }
 
   private readSelectValue(event: Event): string {

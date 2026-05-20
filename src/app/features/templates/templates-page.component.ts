@@ -1,4 +1,4 @@
-import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal } from '@angular/core';
+import { ChangeDetectionStrategy, Component, OnInit, computed, inject, signal, type Signal } from '@angular/core';
 import { MOVEMENT_DIRECTIVES } from 'angular-movement';
 import { stringify } from 'yaml';
 import {
@@ -8,6 +8,7 @@ import {
 } from 'quartz-headless';
 
 import { PromptTemplate } from '../../core/models/entities';
+import { type HasDirtyCheck } from '../../core/guards/dirty-check.guard';
 import { ClipboardService } from '../../core/services/clipboard.service';
 import { MarkdownService } from '../../core/services/markdown.service';
 import { WorkspaceStore } from '../../core/services/workspace-store.service';
@@ -59,22 +60,26 @@ type OutputMode = 'markdown' | 'json' | 'yaml' | 'raw';
           [sections]="sectionsForEditing()"
           [outputMode]="outputMode()"
           [preview]="preview()"
+          [saving]="store.saving()"
           (save)="save($event)"
           (copyOutput)="copyCurrent()"
           (outputModeChange)="setOutputMode($event)"
           (frameworkChange)="syncValues()"
+          (dirtyChange)="editorDirty.set($event)"
         />
       </div>
     </div>
   `,
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
-export class TemplatesPageComponent implements OnInit {
+export class TemplatesPageComponent implements OnInit, HasDirtyCheck {
   readonly store = inject(WorkspaceStore);
   private readonly markdown = inject(MarkdownService);
   private readonly clipboard = inject(ClipboardService);
 
   readonly editingTemplate = signal<PromptTemplate | undefined>(undefined);
+  readonly editorDirty = signal(false);
+  readonly isDirty: Signal<boolean> = computed(() => this.editorDirty());
   readonly outputMode = signal<OutputMode>('markdown');
   readonly filteredTemplates = computed(() => this.store.filterByQuery(this.store.promptTemplates()));
 

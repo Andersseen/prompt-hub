@@ -2,10 +2,10 @@ import { ChangeDetectionStrategy, Component, OnInit, computed, inject } from '@a
 import { Router, RouterOutlet } from '@angular/router';
 import { MOVEMENT_DIRECTIVES } from 'angular-movement';
 
+import { getAppSectionByRoute, toDashboardNavItems } from '../../core/models/navigation';
 import { ThemeService } from '../../core/services/theme.service';
 import { WorkspaceStore } from '../../core/services/workspace-store.service';
 import { DashboardHeaderComponent } from './dashboard-header.component';
-import { DashboardNavItem } from './dashboard-nav.types';
 import { DashboardSidebarComponent } from './dashboard-sidebar.component';
 
 @Component({
@@ -32,8 +32,8 @@ import { DashboardSidebarComponent } from './dashboard-sidebar.component';
             [showFilters]="!isUtilityRoute()"
             [search]="store.search()"
             [tagFilter]="store.tagFilter()"
-            (searchChange)="store.search.set($event)"
-            (tagFilterChange)="store.tagFilter.set($event)"
+            (searchChange)="store.setSearch($event)"
+            (tagFilterChange)="store.setTagFilter($event)"
           />
 
           @if (store.loading()) {
@@ -69,31 +69,11 @@ export class PromptHubDashboardComponent implements OnInit {
   private readonly router = inject(Router);
   private readonly theme = inject(ThemeService);
 
-  readonly navItems: DashboardNavItem[] = [
-    { id: 'agents', label: 'Agents', route: 'agents' },
-    { id: 'promptFrameworks', label: 'Prompt Frameworks', route: 'frameworks' },
-    { id: 'promptTemplates', label: 'Prompt Templates', route: 'templates' },
-    { id: 'skills', label: 'Skills', route: 'skills' },
-    { id: 'roles', label: 'Roles', route: 'roles' },
-    { id: 'promptBlocks', label: 'Prompt Blocks', route: 'blocks' },
-    { id: 'importExport', label: 'Export / Import', route: 'import-export' },
-    { id: 'settings', label: 'Settings', route: 'settings' },
-  ];
+  readonly navItems = toDashboardNavItems();
 
   readonly activeTitle = computed(() => {
-    const url = this.router.url;
-    const route = url.split('/').pop() || '';
-    const titles: Record<string, string> = {
-      'agents': 'Agents',
-      'frameworks': 'Prompt Frameworks',
-      'templates': 'Prompt Templates',
-      'skills': 'Skills',
-      'roles': 'Roles',
-      'blocks': 'Prompt Blocks',
-      'import-export': 'Export / Import',
-      'settings': 'Settings',
-    };
-    return titles[route] ?? 'Prompt Hub';
+    const route = this.router.url.split('/').pop() || '';
+    return getAppSectionByRoute(route)?.title ?? 'Prompt Hub';
   });
 
   async ngOnInit(): Promise<void> {
@@ -101,7 +81,8 @@ export class PromptHubDashboardComponent implements OnInit {
   }
 
   isUtilityRoute(): boolean {
-    const url = this.router.url;
-    return url.includes('import-export') || url.includes('settings');
+    const route = this.router.url.split('/').pop() || '';
+    const section = getAppSectionByRoute(route);
+    return section ? !section.hasEditor : false;
   }
 }
