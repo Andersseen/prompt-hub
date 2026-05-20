@@ -91,7 +91,7 @@ import { WorkspaceStore } from '../../core/services/workspace-store.service';
   changeDetection: ChangeDetectionStrategy.OnPush,
 })
 export class SettingsPageComponent implements OnInit {
-  private readonly store = inject(WorkspaceStore);
+  readonly store = inject(WorkspaceStore);
   readonly themeService = inject(ThemeService);
   readonly settings = computed(() => this.store.settings());
   readonly themeLabel = computed(() => {

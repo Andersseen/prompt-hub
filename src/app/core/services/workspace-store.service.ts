@@ -11,6 +11,7 @@ import {
   Skill,
   Workspace,
 } from '../models/entities';
+import { getAppSectionTitle } from '../models/navigation';
 import {
   SettingsRepository,
   WorkspaceRepository,
@@ -57,20 +58,7 @@ export class WorkspaceStore {
   private searchTimeoutId: ReturnType<typeof setTimeout> | null = null;
   private tagFilterTimeoutId: ReturnType<typeof setTimeout> | null = null;
 
-  readonly activeTitle = computed(() => {
-    const titles: Record<string, string> = {
-      agents: 'Agents',
-      promptFrameworks: 'Prompt Frameworks',
-      promptTemplates: 'Prompt Templates',
-      skills: 'Skills',
-      roles: 'Roles',
-      promptBlocks: 'Prompt Blocks',
-      importExport: 'Export / Import',
-      settings: 'Settings',
-    };
-
-    return titles[this.activeSection()];
-  });
+  readonly activeTitle = computed(() => getAppSectionTitle(this.activeSection()));
 
   async init(): Promise<void> {
     this.loading.set(true);
@@ -84,6 +72,18 @@ export class WorkspaceStore {
     }
   }
 
+  /**
+   * Loads all workspace data in parallel.
+   *
+   * Note: We load the entire workspace at once rather than per-page because:
+   * - IndexedDB is local and queries are very fast (< 50ms for typical datasets).
+   * - Parallel loading via Promise.all minimizes total wait time.
+   * - Keeps all entity signals in sync, preventing stale cross-references.
+   *
+   * If dataset size grows significantly (> 1000 entities), consider:
+   * - Paginated loading per feature page.
+   - Virtual scrolling in lists.
+   */
   async refresh(): Promise<void> {
     if (this.isRefreshing) {
       return;
