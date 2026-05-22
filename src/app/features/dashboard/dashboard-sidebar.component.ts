@@ -16,8 +16,8 @@ interface NavItem {
     <aside class="flex min-h-full flex-col bg-surface p-5">
       <!-- Brand -->
       <div class="mb-8">
-        <p class="text-[10px] font-semibold uppercase tracking-widest text-primary">Prompt Hub</p>
-        <h1 class="mt-1 text-xl font-bold tracking-tight">Workspace</h1>
+        <h1 class="text-[10px] font-semibold uppercase tracking-widest text-primary">Prompt Hub</h1>
+        <p class="mt-1 text-xl font-bold tracking-tight">Workspace</p>
         <p class="mt-1.5 text-xs leading-relaxed text-muted-foreground">
           Local-first prompt management
         </p>

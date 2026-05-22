@@ -6,6 +6,7 @@ test.describe('Dashboard', () => {
     await page.goto('/');
 
     await expect(page.getByRole('heading', { name: 'Prompt Hub' })).toBeVisible();
+    await expect(page.getByRole('heading', { name: 'Agents' })).toBeVisible();
     await expect(page.getByRole('link', { name: 'Agents' })).toBeVisible();
     await expect(page.getByText('Local Storage')).toBeVisible();
   });
@@ -24,17 +25,18 @@ test.describe('Agent workflow', () => {
     await page.goto('/agents');
 
     // Wait for the workspace to load
-    await expect(page.getByText('Angular Development Assistant')).toBeVisible();
+    const agentList = page.locator('app-agent-list');
+    await expect(agentList.getByRole('heading', { name: 'Angular Development Assistant' })).toBeVisible();
 
     // Click "New Agent" in the list panel
-    const newAgentButton = page.locator('app-agent-list').getByRole('button', { name: /new agent/i });
+    const newAgentButton = agentList.getByRole('button', { name: /new agent/i });
     await newAgentButton.click();
 
     // The editor should show "New Agent"
     await expect(page.locator('app-agent-editor').getByText('Agent Editor')).toBeVisible();
 
     // Fill the name
-    const nameInput = page.locator('app-agent-editor').locator('input[name="agentName"], volt-input[name="agentName"] input, [name="agentName"]').first();
+    const nameInput = page.locator('app-agent-editor volt-input[name="agentName"] input');
     await nameInput.fill('Test Agent');
 
     // Save
@@ -60,8 +62,8 @@ test.describe('Export / Import workflow', () => {
 
     // The export textarea should contain valid JSON
     const exportTextarea = page.locator('textarea[name="exportText"]');
-    await expect(exportTextarea).toContainText('"schemaVersion"');
-    await expect(exportTextarea).toContainText('"roles"');
+    await expect(exportTextarea).toHaveValue(/"schemaVersion"/);
+    await expect(exportTextarea).toHaveValue(/"roles"/);
   });
 });
 
@@ -70,10 +72,12 @@ test.describe('Dirty check', () => {
     await page.goto('/agents');
 
     // Wait for load
-    await expect(page.getByText('Angular Development Assistant')).toBeVisible();
+    const agentList = page.locator('app-agent-list');
+    const angularAgent = agentList.getByRole('heading', { name: 'Angular Development Assistant' });
+    await expect(angularAgent).toBeVisible();
 
     // Click on the first agent to edit
-    await page.locator('app-agent-list').getByText('Angular Development Assistant').first().click();
+    await angularAgent.click();
 
     // Modify the name
     const nameInput = page.locator('app-agent-editor').locator('input').first();
